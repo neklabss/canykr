@@ -1,0 +1,19 @@
+{
+  "name": "backupjam",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/** build && pnpm -r --filter ./apps/** build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "i18n:check": "pnpm --filter @backupjam/i18n test",
+    "i18n:arb": "pnpm --filter @backupjam/i18n export:arb",
+    "db:migrate": "pnpm --filter @backupjam/api db:migrate",
+    "dev:api": "pnpm --filter @backupjam/api dev",
+    "dev:web": "pnpm --filter @backupjam/web dev",
+    "dev:admin": "pnpm --filter @backupjam/admin dev"
+  }
+}
