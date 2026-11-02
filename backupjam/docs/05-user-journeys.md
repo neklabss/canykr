@@ -2,6 +2,8 @@
 
 Status: Draft v0.1 · Screen IDs from [04-screen-inventory.md](04-screen-inventory.md); rules from [02-functional-spec.md](02-functional-spec.md); permissions from [03-roles-permissions-matrix.md](03-roles-permissions-matrix.md).
 
+Phases (01-prd §6): J1 Phase 1–2 (step 9 Phase 4) · J2 Phase 3 (payment, badges and reviews Phase 4) · J3 Phase 3 (payment step Phase 4) · J4 Phase 5 · J5 Phase 1–3 (payments Phase 4) · J6 Phase 1+ · J7 Phase 4 · J8 Phase 4.
+
 Each journey: actors, preconditions, step table (actor · action · screen · system behaviour), failure branches, and what must be true at the end (postconditions). Platform fee values are placeholders until OD4 is decided.
 
 ---
@@ -13,7 +15,7 @@ Each journey: actors, preconditions, step table (actor · action · screen · sy
 
 | # | Actor | Action | Screen | System |
 |---|---|---|---|---|
-| 1 | Deniz | Opens app first time | M-AUTH-01 | UI in `tr` (device locale supported); language picker visible |
+| 1 | Deniz | Opens app first time | M-AUTH-01 | UI in `tr` (device locale is one of the 16 complete locales; `tr` is `machine_draft`, awaiting native review); language picker visible |
 | 2 | Deniz | Taps "Sign up with Google" | M-AUTH-03 | OIDC ID token verified against Google JWKS (D7); account created; email marked verified (Google `email_verified=true`) |
 | 3 | Deniz | Selects capabilities `musician`, `music_teacher` | M-AUTH-06 | At least one required |
 | 4 | Deniz | Confirms `locale=tr`, `country_code=TR`, `currency_code=TRY`, `time_zone=Europe/Istanbul` | M-AUTH-07 | Stored independently (D9) |
@@ -21,7 +23,7 @@ Each journey: actors, preconditions, step table (actor · action · screen · sy
 | 6 | Deniz | Uploads 2 drum videos | M-PROF-03 | Signed upload URLs; processing + malware scan; "Processing" state until ready (D15) |
 | 7 | Deniz | Turns on "Available for emergencies" Tue–Sun 17:00–23:00 | M-PROF-04 | Eligible for emergency matching |
 | 8 | Deniz | Accepts notification primer, keeps default quiet hours 23:00–08:00 | M-AUTH-09 / M-PROF-20 | Push token registered |
-| 9 | Deniz | Optional: requests `identity_verified` | M-PROF-12 | KYC flow; status `pending` |
+| 9 | Deniz | Optional (Phase 4): requests `identity_verified` | M-PROF-12 | KYC flow; status `pending` |
 
 Failure branches
 - 2a. Email sign-up instead → M-AUTH-04 verify; until verified, apply/offer/message are disabled with banner (state V).
@@ -35,7 +37,7 @@ Postconditions: profile `public`, appears on `/tr/u/deniz`, in `W-DIR-01` for Is
 ## J2 — Emergency "drummer needed tonight" end-to-end
 
 **Actors**: Sofia (band org "Lisboa Groove", role `owner`, Lisbon); candidates within 30 km; Deniz-equivalent local drummer Rui.
-**Preconditions**: Band org has `official_band`; gig tonight 21:30 at a verified venue; their drummer is ill at 15:10.
+**Preconditions**: Band org has ≥ 1 completed booking (or `official_band` once Phase 4 ships); gig tonight 21:30 at a verified venue; their drummer is ill at 15:10.
 
 | # | Time | Actor | Action | Screen | System |
 |---|---|---|---|---|---|
@@ -155,7 +157,7 @@ Failure branches: position unfilled 48 h before → warning + suggestion to conv
 
 | # | Action | Expected behaviour |
 |---|---|---|
-| 1 | Signs up; device locale `de-DE`, chooses Türkçe in picker | UI `tr`; `country_code` defaults to DE from device region, editable (D9) |
+| 1 | Signs up; device locale `de-DE`, chooses Türkçe in picker | UI `tr` (complete, `machine_draft` — awaiting native review); `country_code` defaults to DE from device region, editable (D9) |
 | 2 | Discover | Shows Berlin venues and DE jobs (market from `country_code` + location), labels in Turkish, venue names untranslated |
 | 3 | Views job posted in EUR | "450 €" formatted with `tr` number rules ("450 €" / "1.250,00 €"), no conversion needed |
 | 4 | Views a profile priced in TRY (Istanbul musician) | "≈ 85 € · 3.000 TRY" with ≈ marker; tap shows rate source/time |
@@ -183,7 +185,7 @@ Postconditions: no setting silently changes another; prices settle in offer curr
 | Input | Text fields right-aligned, caret behaviour native; handles (`@name`) and URLs forced LTR |
 | Typography | Noto Sans Arabic, line-height +10 % vs Latin; no letter-spacing on Arabic |
 | Week | Calendar week start from locale/country (Sat or Mon per CLDR for AE) |
-| Locale availability | `ar` exposed only if completeness test passes; otherwise fallback `en` with notice |
+| Locale availability | `ar` is complete (passes completeness tests) and shown in the picker; status `machine_draft` until native review. Any missing key falls back to `en` |
 | SEO | `/ar/…` pages with `dir="rtl"` `lang="ar"` and `hreflang="ar"` |
 
 Test: Arabic pseudo-locale + real strings screenshot tests for all M-* and W-* Phase 1–3 screens.

@@ -79,60 +79,67 @@ All targets are hypotheses for the first 12 months after a market opens; they mu
 | Verification review SLA | Median time from submit to decision | ≤ 48 h | Staffing-dependent; KYC provider latency |
 | Dispute resolution time | Median from open to resolution | ≤ 7 days | Provider chargeback timelines are outside our control |
 | WAU/MAU | Stickiness of active users | ≥ 0.35 | Seasonality (wedding season, holidays) |
-| Locale completeness | % of exposed locales passing completeness test | 100 % of exposed | `machine_draft` locales are hidden by design |
+| Locale completeness | % of exposed locales passing completeness test | 100 % of exposed | All 16 locales are complete; only `en` is `reviewed`, the other 15 are `machine_draft` (shown, awaiting native review) |
 | Crash-free sessions (mobile) | Sessions without crash | ≥ 99.5 % | — |
 
 Vanity metrics (follower counts, challenge vote totals) are **not** success metrics and must not drive ranking.
 
 ## 6. Scope per phase
 
-Phases are sequential; each has an exit criterion. Phase numbering aligns with 00-decisions (D13 realtime = Phase 3, D14 queues & D15 media = Phase 2).
+Phases are sequential; each has an exit criterion. This is the official phase plan, identical to [07-architecture.md](07-architecture.md) §5 and [19-backlog.md](19-backlog.md). Decision mapping: D13 realtime = Phase 3; D14 queues and D15 media = Phase 2; D10/D12 = Phase 4; D11 = Phase 6.
 
-### Phase 1 — Foundation & identity
-- Accounts: email/password (scrypt, D6), Google & Apple OIDC (D7), JWT + rotating refresh (D5), email verification, password reset, account deletion request.
-- Capabilities self-declaration; user settings for `locale`, `country_code`, `currency_code`, `time_zone` (D9).
-- Personal profiles (musician/crew fields: instruments, genres, skills, location via PostGIS, travel radius, rate "from X").
-- Organizations: create `band`/`venue`/`agency`/`organizer`/`company`; invite members; org roles & permissions.
-- Public web profile pages (SEO) and basic directory listing with filters.
-- i18n pipeline (D8) with `en` + `tr` fully reviewed; others `machine_draft` hidden.
-- Admin: staff login (separate audience, D17), user lookup, suspend, audit log.
-- **Exit**: a user can sign up, create a profile and org, and be found on web in 2 locales.
+### Phase 1 — Foundation
+- Architecture, DB schema, core API, OpenAPI contract (D2, D3, D18).
+- Auth: email/password (scrypt, D6), Google & Apple OIDC (D7), JWT + rotating refresh with reuse detection (D5), sessions.
+- User preferences: `locale`, `country_code`, `currency_code`, `time_zone` set independently (D9); onboarding answers incl. capabilities.
+- i18n pipeline (D8): all 16 launch locales are complete and shown in the picker; only `en` has status `reviewed`, the other 15 are `machine_draft` awaiting native review (`packages/i18n/locales/_registry.json`).
+- User roles: capabilities; organizations (`band`, `venue`, `agency`, `organizer`, `company`) + memberships with org roles & permissions.
+- Design system tokens (06).
+- Shells: locale-prefixed web shell, separate admin app, Flutter 5-tab shell.
+- Admin: staff login (separate audience, D17), users, suspend, audit log, feature flags, countries.
+- **Implemented in this repo today**: email/Google/Apple auth, sessions, preferences, onboarding answers, organizations + memberships, admin (users / suspend / audit / flags / countries), locale-prefixed web shell, Flutter 5-tab shell.
+- **Exit**: a user can sign up in any of the 16 locales, set language, country and currency independently, create a band or venue organization and invite members; staff can suspend an account and the action appears in the audit trail.
 
-### Phase 2 — Marketplace core
-- Jobs & applications (post, apply, shortlist, hire).
+### Phase 2 — Marketplace
+- Musician / crew profiles (instruments, genres, skills, PostGIS location, travel radius, rate "from X"); public SEO profile pages.
+- Band and venue profiles (line-up, specs, backline).
+- Media portfolios (S3, signed URLs, malware scan hook, D15).
+- Job listings & applications (post, apply, shortlist, decline).
+- Search & directories, ranking v1 (organic only).
+- Notifications (push, email, in-app) on BullMQ (D14), incl. quiet hours and caps.
+- **Exit**: a venue posts a job, a musician found via search applies, and both are notified.
+
+### Phase 3 — Communication & Offers
+- Messaging 1:1, org inbox, message requests, block/mute/report; realtime via WebSocket gateway (D13).
+- Negotiation: offers / counter-offers with versioning; acceptance produces immutable snapshot.
+- Availability calendar.
+- Booking requests and booking lifecycle (confirmed → completed / cancelled); cancellation amounts calculated (payment applied in Phase 4).
 - Emergency requests with matching, notification limits, quiet hours, auto-close when filled.
-- Notifications (push, email, in-app) on BullMQ (D14).
-- Media uploads (S3, signed URLs, malware scan hook, D15): audio/video samples, photos, verification documents.
-- Verification requests & appeals; staff review queue.
-- Search & ranking v1 (organic only).
-- **Exit**: an emergency request can be published and filled end-to-end with notifications.
+- **Exit**: 12,000 TRY budget → 14,000 offer → 12,500 counter → accepted flow works with snapshot (journey J3), and an emergency request is filled end-to-end (J2).
 
-### Phase 3 — Negotiation, bookings & messaging
-- Offers / counter-offers thread with versioning; acceptance produces immutable booking snapshot.
-- Bookings lifecycle (confirmed → completed / cancelled / disputed).
-- Messaging 1:1 and org inbox; realtime via WebSocket gateway (D13).
-- Calendar & availability.
-- **Exit**: 12,000 TRY budget → 14,000 offer → 12,500 counter → accepted flow works with snapshot (see journey J3).
-
-### Phase 4 — Payments, reviews & disputes
-- `PaymentProvider` interface wired to first licensed provider per launch country; `MockPaymentProvider` only in non-prod and clearly labelled.
-- Payment collection, payout onboarding (provider-hosted KYC), refunds, disputes.
+### Phase 4 — Payments & Trust
+- `PaymentProvider` interface wired to the first licensed provider per launch country; `MockPaymentProvider` only in non-prod and clearly labelled (D10).
+- Payment collection, payout onboarding (provider-hosted KYC), payouts, refunds, disputes.
+- Verification: requests, appeals, badges (`identity_verified`, `official_band`, `official_artist`, `verified_venue`, `verified_organizer`), staff review queue (D12).
 - Reviews tied to completed bookings; org responses.
-- Finance views for org (`org.finance.view`) and staff (`admin.finance.read`, `admin.finance.refund`).
+- Finance views for org (`org.finance.view`) and staff (`admin.finance.read`, `admin.finance.refund`); per-country legal docs; data export / deletion rights.
 - **Exit**: one real country live with a signed provider contract.
 
-### Phase 5 — Events & staffing
-- Events with multiple staffing positions; per-position offers and bookings.
-- Public events calendar (SEO), community events (free, non-ticketed).
-- Organizer and venue dashboards.
+### Phase 5 — Events & Community
+- Events with multiple staffing positions; per-position offers and bookings; run-sheets.
+- Meetups / community events (free, non-ticketed), RSVP, group networking.
+- Event chat.
+- Community discovery; public events calendar (SEO); organizer and venue dashboards.
 - **Exit**: organizer staffs an event with 5 positions (journey J4).
 
-### Phase 6 — Community & growth
-- Social: follow, posts, comments, reactions, share.
+### Phase 6 — Challenges & Growth
 - Challenges with anti-bot voting, copyright controls, no gambling mechanics.
-- Sponsored placements (clearly labelled, separated from organic ranking).
-- Premium subscriptions / boosts (D11, store billing review per territory).
-- All 16 launch locales passing completeness and native review.
+- Social posts, follow feed, comments, reactions.
+- Moderation at scale (full queue, appeals, DSA flow).
+- Sponsorship (clearly labelled, separated from organic ranking).
+- Advanced discovery & analytics.
+- Premium / digital purchases via store billing (D11).
+- Native review of the 15 `machine_draft` locales completed (promote to `reviewed`).
 - **Exit**: sponsored and organic results provably separated; challenges run with fraud metrics below threshold.
 
 ## 7. Platform scope summary
@@ -155,7 +162,7 @@ Phases are sequential; each has an exit criterion. Phase numbering aligns with 0
 | A4 | Licensed marketplace providers exist and will onboard us in each launch country | Provider conversations | Delay payments in that country; bookings without payment |
 | A5 | Store billing rules allow boosts as in-app purchases in key territories | Legal review per territory (D11) | Web-only purchase or remove boosts |
 | A6 | Users accept one account with multiple capabilities | Onboarding analytics | Offer "switch context" UI |
-| A7 | Machine-draft translations plus native review are affordable for 16 locales | Localization budget | Fewer launch locales; keep `en` fallback |
+| A7 | Native review of the 15 `machine_draft` locales is affordable | Localization budget | Keep them labelled `machine_draft`; prioritise launch-market locales; `en` fallback |
 
 ## 9. Risks
 
@@ -192,8 +199,8 @@ These block the phases indicated. Owner must record outcome as a new row in 00-d
 | OD3 | **Product name & trademark** | Keep "BackUpJam" after clearance / rename | Public launch, store listings, domains | Founders | Run TM searches (EUIPO, TÜRKPATENT, USPTO, WIPO), domain and store-name checks |
 | OD4 | Platform fee model | % of booking from booker / from performer / split / flat | Phase 4 | Product + Finance | Must be shown before acceptance, included in snapshot |
 | OD5 | Cancellation policy defaults | Flexible / moderate / strict tiers | Phase 3 | Product + Legal | Snapshot stores the policy text version |
-| OD6 | KYC vendor | Provider-hosted KYC vs. separate vendor | Phase 2 verification | T&S | Avoid storing raw ID documents longer than required |
-| OD7 | Minimum age | 16 vs 18 (per country) | Phase 1 | Legal | Affects bookings with payouts (likely 18) |
+| OD6 | KYC vendor | Provider-hosted KYC vs. separate vendor | Phase 4 verification | T&S | Avoid storing raw ID documents longer than required |
+| OD7 | Minimum age | 16 vs 18 (per country) | Phase 3 (bookings), Phase 4 (payouts) | Legal | Affects bookings with payouts (likely 18) |
 
 ## 12. Glossary
 

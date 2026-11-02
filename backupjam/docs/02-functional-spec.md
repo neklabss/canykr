@@ -2,6 +2,8 @@
 
 Status: Draft v0.1 · Depends on: [00-decisions.md](00-decisions.md), [01-prd.md](01-prd.md), [03-roles-permissions-matrix.md](03-roles-permissions-matrix.md)
 
+Phase numbers follow the official plan (01-prd §6, 07-architecture §5, 19-backlog): 1 Foundation · 2 Marketplace · 3 Communication & Offers · 4 Payments & Trust · 5 Events & Community · 6 Challenges & Growth. Where a module spans phases, individual ACs carry a `[Pn]` tag.
+
 Conventions
 - **AC** = acceptance criterion. Each AC is testable; "MUST" is mandatory for the phase listed.
 - Money is integer minor units + ISO-4217 code (D4). Examples show major units for readability.
@@ -25,35 +27,35 @@ Conventions
 - AC-AUTH-08: Rate limits: 5 failed logins / 15 min per account + per IP → progressive delay; 3 reset emails / hour.
 - AC-AUTH-09: Users under the minimum age (OD7, default 18 for payouts, 16 for browsing/social where allowed) cannot accept bookings with payouts.
 - AC-AUTH-10: Settings: `locale`, `country_code`, `currency_code`, `time_zone` are independent; changing one never changes another automatically after onboarding (D9).
-- AC-AUTH-11: Account deletion: soft-delete immediately (profile hidden), hard-delete personal data after 30 days, except records with legal retention (bookings, payments, audit). Blocked while user has open bookings or open disputes; UI lists blockers.
-- AC-AUTH-12: Data export (GDPR/KVKK/LGPD) generates a downloadable archive within 72 h.
+- AC-AUTH-11 [P4]: Account deletion: soft-delete immediately (profile hidden), hard-delete personal data after 30 days, except records with legal retention (bookings, payments, audit). Blocked while user has open bookings or open disputes; UI lists blockers.
+- AC-AUTH-12 [P4]: Data export (GDPR/KVKK/LGPD) generates a downloadable archive within 72 h.
 - AC-AUTH-13: Active sessions list with device, last seen, and "sign out" per session.
 
-## 2. `profiles` (Phase 1)
+## 2. `profiles` (Phase 2; capabilities & preferences Phase 1)
 
-- AC-PROF-01: A user declares one or more capabilities from the fixed list (`musician`, `band_member`, `band_manager`, `venue_owner`, `venue_staff`, `organizer`, `booking_agent`, `artist_manager`, `sound_engineer`, `lighting_technician`, `music_teacher`, `enthusiast`, `customer`). At least one is required.
+- AC-PROF-01 [P1]: A user declares one or more capabilities from the fixed list (`musician`, `band_member`, `band_manager`, `venue_owner`, `venue_staff`, `organizer`, `booking_agent`, `artist_manager`, `sound_engineer`, `lighting_technician`, `music_teacher`, `enthusiast`, `customer`). At least one is required.
 - AC-PROF-02: Performer/crew fields: display name, handle (unique, 3–30 chars, `[a-z0-9_.]`), bio (per-locale variants optional), instruments (taxonomy IDs + proficiency), genres, skills (e.g. "reads charts", "IEM rig"), languages spoken, base location (PostGIS point, stored precise, exposed rounded to ~1 km), travel radius km, "from" rate (amount + currency + unit: per gig / per hour), equipment owned, media samples.
 - AC-PROF-03: Handle change allowed once per 30 days; old handle redirects for 90 days (web 301).
 - AC-PROF-04: Visibility: `public` (indexable), `members_only` (logged-in users), `hidden`. Default `public` for performers, `members_only` for enthusiasts.
-- AC-PROF-05: Availability calendar: busy blocks (private reason) + "available for emergency" toggle with time windows.
+- AC-PROF-05 [P3]: Availability calendar: busy blocks (private reason) + "available for emergency" toggle with time windows.
 - AC-PROF-06: Profile completeness score shown only to the owner; never displayed publicly.
 - AC-PROF-07: Rate display converts to viewer's `currency_code` with "≈" prefix and the original currency on tap; settlement always in the offer currency (D4).
 - AC-PROF-08: Public web profile at `/{locale}/u/{handle}` server-rendered with `hreflang` alternates, JSON-LD `Person`/`MusicGroup`, canonical URL.
 
-## 3. `bands` (Phase 1)
+## 3. `bands` (Phase 2)
 
-A band is an organization of type `band`.
+A band is an organization of type `band` (org + memberships exist from Phase 1; band profile fields arrive in Phase 2).
 - AC-BAND-01: Create band with name, genres, home city, line-up (linked members or placeholder names), "from" fee.
 - AC-BAND-02: Line-up entries link to user accounts via invite; invitee accepts to appear. Placeholder members are shown without profile link.
 - AC-BAND-03: A user can belong to multiple bands; each membership has an org role (`owner`/`admin`/`manager`/`member`/`staff`).
-- AC-BAND-04: `official_band` badge is requested via verification (§6), never bought.
+- AC-BAND-04 [P4]: `official_band` badge is requested via verification (§6), never bought.
 - AC-BAND-05: There is always exactly one `owner`; ownership transfer requires target acceptance and re-auth of current owner.
 
-## 4. `venues` (Phase 1)
+## 4. `venues` (Phase 2)
 
 - AC-VEN-01: Venue org fields: name, address (geocoded), capacity (standing/seated), stage size, backline list, PA spec, load-in notes, accessibility info, opening hours, genres hosted, typical budget range (private by default).
 - AC-VEN-02: Venue public page shows upcoming public events and reviews from completed bookings.
-- AC-VEN-03: `verified_venue` requires proof of operation (business registration or utility bill + photos) reviewed by staff.
+- AC-VEN-03 [P4]: `verified_venue` requires proof of operation (business registration or utility bill + photos) reviewed by staff.
 
 ## 5. `organizations` (Phase 1)
 
@@ -65,7 +67,7 @@ A band is an organization of type `band`.
 - AC-ORG-06: Org deletion (`org.delete`) blocked while bookings are open or payouts pending.
 - AC-ORG-07: Agencies can link represented artists (user or band org) with the artist's consent; the agency then negotiates on their behalf with `org.offers.negotiate`.
 
-## 6. `verification` (Phase 2)
+## 6. `verification` (Phase 4)
 
 Badges: `identity_verified`, `official_band`, `official_artist`, `verified_venue`, `verified_organizer` (D12).
 - AC-VER-01: Badges are never purchasable, never bundled with premium, and ranking never weights premium status as a proxy for verification.
@@ -88,7 +90,7 @@ Badges: `identity_verified`, `official_band`, `official_artist`, `verified_venue
 - AC-JOB-07: Public jobs listed on web job marketplace (indexable, JSON-LD `JobPosting` only for paid jobs with a valid date) and removed from index (410) when closed.
 - AC-JOB-08: Job posts that request off-platform payment details or contain contact info in the description are flagged for review (soft block, explanation shown).
 
-## 8. Emergency requests (Phase 2)
+## 8. Emergency requests (Phase 3)
 
 An emergency request is a job with `is_emergency = true` and `needed_at` ≤ 24 h from publish.
 
@@ -98,14 +100,14 @@ An emergency request is a job with `is_emergency = true` and `needed_at` ≤ 24 
 - AC-EMG-04: Notification waves: wave 1 = top 15 candidates immediately; if < 2 responses after 10 min, wave 2 = next 30; then wave 3 widens radius ×1.5 (once). Max 3 waves.
 - AC-EMG-05: Per-recipient limits: max 3 emergency pushes per rolling 24 h, max 1 per 60 min; excess goes to in-app inbox only.
 - AC-EMG-06: Quiet hours: recipient-defined (default 23:00–08:00 in recipient `time_zone`). During quiet hours push is suppressed unless the recipient opted into "emergencies during quiet hours"; in-app item still created.
-- AC-EMG-07: Per-poster limits: max 3 active emergency requests per user/org; max 10 per 7 days without `verified_venue`/`verified_organizer`/`identity_verified`.
+- AC-EMG-07: Per-poster limits: max 3 active emergency requests per user/org; max 10 per 7 days without `verified_venue`/`verified_organizer`/`identity_verified`. Until badges ship in Phase 4, the poster must have ≥ 1 completed booking to send emergency requests.
 - AC-EMG-08: Candidate response: `I'm available` (optional note) or `Not this time`. Poster sees responders in real-time order with distance and ETA estimate.
 - AC-EMG-09: Poster selects a responder → offer at the posted fee (counter allowed once, 15-min expiry) → acceptance creates booking.
 - AC-EMG-10: **Auto-close when filled**: when the required number of bookings is confirmed, the request closes atomically (DB transaction with row lock), pending waves are cancelled, outstanding notifications are recalled (push "this spot has been filled" sent only to users who responded; others get silent in-app update).
 - AC-EMG-11: Auto-expire at `needed_at`; poster prompted to repost or convert to a normal job.
 - AC-EMG-12: Emergency fee must be ≥ the country's configured minimum (`admin.countries.manage`) to avoid exploitative requests.
 
-## 9. Events & staffing positions (Phase 5)
+## 9. Events, staffing positions & community (Phase 5)
 
 - AC-EVT-01: Event fields: title, organizer org, venue (org or free-text address), start/end with time zone, visibility (`public`, `private`), category (gig, wedding, corporate, festival, community), cover image, description.
 - AC-EVT-02: Positions: each has role (instrument/crew type), count, fee or budget range, call time, notes, status (`open`, `offered`, `filled`, `cancelled`).
@@ -114,7 +116,10 @@ An emergency request is a job with `is_emergency = true` and `needed_at` ≤ 24 
 - AC-EVT-05: Run-sheet: ordered timeline items visible to all booked parties; changes after booking notify all parties and are versioned.
 - AC-EVT-06: Cancelling an event triggers cancellation flow for each linked booking per its snapshot policy.
 - AC-EVT-07: Public events appear in web events calendar (indexable, JSON-LD `MusicEvent`/`Event`).
-- AC-EVT-08: Community events (free, non-commercial) can be created by any verified-email user; they have no positions or payments.
+- AC-EVT-08: Community events / meetups (free, non-commercial, optionally weekly recurring) can be created by any verified-email user; they have no positions or payments.
+- AC-EVT-09: RSVP (`going`, `interested`, `not_going`) with optional capacity and waitlist; organizer sees attendee list.
+- AC-EVT-10: Event chat: an event channel for RSVP'd attendees / booked parties, reusing messaging (§14) moderation and block rules.
+- AC-EVT-11: Community discovery: nearby events, meetups and groups by genre/instrument, ordered by date and distance (no sponsored items mixed in).
 
 ## 10. `offers` / negotiation (Phase 3)
 
@@ -131,9 +136,9 @@ An emergency request is a job with `is_emergency = true` and `needed_at` ≤ 24 
 ## 11. `bookings` (Phase 3)
 
 - AC-BKG-01: Booking created only from an accepted offer snapshot; references `snapshot_id` and hash.
-- AC-BKG-02: States: `pending_payment` (if payments live in that country) → `confirmed` → `in_progress` (at start time) → `completed` (auto 24 h after end unless disputed) | `cancelled_by_booker` | `cancelled_by_performer` | `disputed` → `resolved`.
+- AC-BKG-02: States (`pending_payment` only from Phase 4; before that bookings start at `confirmed`): `pending_payment` (if payments live in that country) → `confirmed` → `in_progress` (at start time) → `completed` (auto 24 h after end unless disputed) | `cancelled_by_booker` | `cancelled_by_performer` | `disputed` → `resolved`.
 - AC-BKG-03: Changes after confirmation (time, set length) use an amendment offer; accepted amendment creates a new snapshot linked to the previous one.
-- AC-BKG-04: Cancellation computes refund/compensation from the snapshot policy; the UI shows the computed amount before confirming.
+- AC-BKG-04: Cancellation computes refund/compensation (money movement applied from Phase 4) from the snapshot policy; the UI shows the computed amount before confirming.
 - AC-BKG-05: Booking adds calendar blocks for both parties; iCal export link per user.
 - AC-BKG-06: Check-in (optional): performer taps "arrived" within 500 m of location; used as evidence only.
 
@@ -177,7 +182,7 @@ An emergency request is a job with `is_emergency = true` and `needed_at` ≤ 24 
 - AC-NOT-05: Delivered via BullMQ with retries (exponential, max 5) and dedupe keys (D14).
 - AC-NOT-06: Global per-user cap: max 20 push / 24 h across categories excluding messages & critical.
 
-## 16. Search & ranking (Phase 2; sponsored Phase 6)
+## 16. Search & ranking (Phase 2; availability filter Phase 3; badge filter Phase 4; sponsored & advanced discovery Phase 6)
 
 - AC-SRCH-01: Search entities: people, bands, venues, organizers, jobs, events. Filters: capability, instrument, genre, distance, date availability, price "from" range, language spoken, verification badge.
 - AC-SRCH-02: Organic ranking signals: relevance (text + taxonomy), distance, availability, completed-booking reliability, rating (Bayesian-smoothed), profile freshness. **Not** follower count, **not** premium, **not** boosts.
@@ -204,12 +209,12 @@ An emergency request is a job with `is_emergency = true` and `needed_at` ≤ 24 
 - AC-SOC-03: Report post/comment; hide; mute; block.
 - AC-SOC-04: Follower counts are visible but are not ranking signals (AC-SRCH-02).
 
-## 19. `admin` (Phase 1+)
+## 19. `admin` (Phase 1+: users, suspend, audit, flags, countries implemented)
 
 - AC-ADM-01: Separate Next.js app, separate auth audience, mandatory TOTP/WebAuthn MFA, IP allow-list optional (D17).
 - AC-ADM-02: Staff roles and permissions per 03-roles-permissions-matrix; least privilege; `super_admin` cannot be assigned by self.
 - AC-ADM-03: Every admin read of PII (`admin.users.read`) and every write is audit-logged; `admin.audit.read` views it; logs are append-only.
-- AC-ADM-04: Queues: verification, reports/moderation, disputes, payouts exceptions, translation review.
+- AC-ADM-04: Queues: translation review [P1], verification [P4], disputes & payout exceptions [P4], reports/moderation at scale [P6] (basic report intake from Phase 3).
 - AC-ADM-05: Feature flags (`admin.flags.manage`) with per-country / per-locale targeting.
 - AC-ADM-06: Country config (`admin.countries.manage`): enabled flag, payment provider binding, minimum emergency fee, legal doc versions, age limits.
 - AC-ADM-07: i18n (`admin.i18n.manage`): view locale completeness, mark locale reviewed (promote from `machine_draft`), never edit source keys directly in prod.

@@ -1,6 +1,6 @@
 # 06 — Design System ("Jam" system)
 
-Status: Draft v0.1 · Implemented as tokens in Flutter (Material 3 + custom tokens, D16) and web/admin (CSS variables). Token names here are canonical; code mirrors them (`color.bg.canvas` → Dart `JamColors.bgCanvas`, CSS `--color-bg-canvas`).
+Status: Draft v0.1 · Phase 1 (Foundation) deliverable per 01-prd §6; components for later features (price chip P2, emergency card P3, verification badge P4, sponsored label P6) are specified now and built in their feature's phase · Implemented as tokens in Flutter (Material 3 + custom tokens, D16) and web/admin (CSS variables). Token names here are canonical; code mirrors them (`color.bg.canvas` → Dart `JamColors.bgCanvas`, CSS `--color-bg-canvas`).
 
 This is an original system. It must not imitate the visual identity of Spotify, Instagram, LinkedIn, SoundCloud, Bandcamp or any other product (no green-on-black circle play buttons, no gradient-ring avatars, no blue "professional" chrome).
 

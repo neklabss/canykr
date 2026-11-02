@@ -1,0 +1,56 @@
+# Local development stack. Secrets here are DEV-ONLY placeholders — never reuse them anywhere else.
+#   docker compose -f infra/docker-compose.yml up -d db redis      # just the dependencies
+#   docker compose -f infra/docker-compose.yml --profile apps up    # everything
+name: backupjam
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: backupjam
+      POSTGRES_PASSWORD: backupjam
+      POSTGRES_DB: backupjam
+    ports: ["5432:5432"]
+    volumes: [db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backupjam"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  migrate:
+    profiles: [apps]
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile }
+    command: ["node", "dist/database/migrate.cli.js"]
+    environment:
+      DATABASE_URL: postgres://backupjam:backupjam@db:5432/backupjam
+    depends_on: { db: { condition: service_healthy } }
+
+  api:
+    profiles: [apps]
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile }
+    env_file: [../apps/api/.env.example]
+    environment:
+      DATABASE_URL: postgres://backupjam:backupjam@db:5432/backupjam
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: dev-only-secret-dev-only-secret-dev-only-secret
+    ports: ["4000:4000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    profiles: [apps]
+    build: { context: .., dockerfile: infra/docker/next.Dockerfile, args: { APP: web, PORT: "3000" } }
+    environment: { NEXT_PUBLIC_API_URL: http://localhost:4000, NEXT_PUBLIC_SITE_URL: http://localhost:3000 }
+    ports: ["3000:3000"]
+
+  admin:
+    profiles: [apps]
+    build: { context: .., dockerfile: infra/docker/next.Dockerfile, args: { APP: admin, PORT: "3001" } }
+    environment: { NEXT_PUBLIC_API_URL: http://localhost:4000 }
+    ports: ["3001:3001"]
+
+volumes:
+  db-data:

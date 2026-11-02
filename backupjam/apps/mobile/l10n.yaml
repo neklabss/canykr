@@ -1,0 +1,8 @@
+# ARB files are GENERATED from packages/i18n/locales (single source of truth):
+#   pnpm i18n:arb
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n/gen
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

@@ -2,6 +2,8 @@
 
 Status: Draft v0.1 · Source of truth for identifiers: [00-decisions.md](00-decisions.md). This document **expands** that vocabulary; it does not add new org or staff permissions. Where a rule needs an extra check, it is expressed as an object-level rule (§5), not a new permission.
 
+Phases (01-prd §6): rows and rules apply from the phase in which the underlying feature ships — e.g. offers/emergency Phase 3, verification/reviews/payouts Phase 4, events Phase 5, challenges/social Phase 6. Org and staff permissions themselves exist from Phase 1.
+
 Legend: ✓ allowed · — not allowed · ◐ allowed with condition (see note) · V = requires verified email
 
 Authorization is evaluated in this order for every request:
@@ -57,7 +59,7 @@ Notes
 1. A `band_manager` who also performs adds `musician`; otherwise manager profile shows represented bands, not instruments.
 2. Crew fields are skills/equipment (desk models, lighting consoles) rather than instruments.
 3. Agents/managers applying on behalf of artists should act as their `agency` org; personal application is allowed only for themselves.
-4. `customer` emergency requests (e.g. private party) require `identity_verified` to limit abuse.
+4. `customer` emergency requests (e.g. private party) require `identity_verified` to limit abuse. Emergency requests ship in Phase 3 and badges in Phase 4, so `customer` emergency posting stays disabled until Phase 4.
 
 Capability-independent limits apply to everyone: emergency posting caps (AC-EMG-07), message request limits (AC-MSG-02), notification caps.
 

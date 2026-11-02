@@ -299,7 +299,7 @@
       }
     }
   },
-  "jobsCount": "{count, plural, one {# job} other {# jobs}}",
+  "jobsCount": "{count,plural,one{{count} job} other{{count} jobs}}",
   "@jobsCount": {
     "description": "Key: jobs.count",
     "placeholders": {
@@ -309,7 +309,7 @@
       }
     }
   },
-  "messagesUnread": "{count, plural, one {# unread message} other {# unread messages}}",
+  "messagesUnread": "{count,plural,one{{count} unread message} other{{count} unread messages}}",
   "@messagesUnread": {
     "description": "Key: messages.unread",
     "placeholders": {

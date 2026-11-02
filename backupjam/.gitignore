@@ -14,3 +14,5 @@ apps/mobile/build/
 apps/mobile/.flutter-plugins*
 apps/mobile/pubspec.lock
 src/generated/
+apps/mobile/lib/l10n/gen/
+*.tsbuildinfo

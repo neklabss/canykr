@@ -226,8 +226,7 @@ export function SettingsForm() {
         <select className="input" id="currency" name="currency" defaultValue={p.currencyCode ?? ''}>
           <option value="">—</option>
           {currencies.map((c) => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
-        </select>
-        <small>{t('price.convertedNotice', { currency: p.currencyCode ?? '—' })}</small></div>
+        </select></div>
       <div className="field"><label htmlFor="theme">{t('settings.theme')}</label>
         <select className="input" id="theme" name="theme" defaultValue={p.theme}>
           <option value="system">{t('settings.themeSystem')}</option>

@@ -4,6 +4,24 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse, TYPE } from '@formatjs/icu-messageformat-parser';
+import { printAST } from '@formatjs/icu-messageformat-parser/printer.js';
+
+/**
+ * Flutter gen_l10n does not understand ICU '#'. Replace each '#' inside a plural with the plural
+ * argument ({count}), which gen_l10n renders with locale-aware number formatting.
+ */
+function flutterCompatible(msg) {
+  const ast = parse(msg);
+  const rewrite = (els, pluralArg) => els.map((el) => {
+    if (el.type === TYPE.pound && pluralArg) return { type: TYPE.argument, value: pluralArg };
+    if (el.type === TYPE.plural || el.type === TYPE.select) {
+      const arg = el.type === TYPE.plural ? el.value : pluralArg;
+      return { ...el, options: Object.fromEntries(Object.entries(el.options).map(([k, o]) => [k, { ...o, value: rewrite(o.value, arg) }])) };
+    }
+    return el;
+  });
+  return printAST(rewrite(ast, null));
+}
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, '../../apps/mobile/lib/l10n');
@@ -31,7 +49,7 @@ for (const l of registry.locales) {
   const arb = { '@@locale': l.flutter };
   for (const [key, value] of Object.entries(src)) {
     const id = toId(key);
-    arb[id] = value;
+    arb[id] = flutterCompatible(value);
     if (l.tag === registry.defaultLocale) {
       const ph = placeholders(en[key]);
       arb[`@${id}`] = { description: `Key: ${key}`, ...(Object.keys(ph).length ? { placeholders: ph } : {}) };
