@@ -5,7 +5,10 @@
   "description": "BackUpJam shared localization: ICU message resources, locale negotiation, RTL, money/date formatting.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "locales"],
+  "files": [
+    "dist",
+    "locales"
+  ],
   "scripts": {
     "generate": "node scripts/build-resources.mjs",
     "build": "node scripts/build-resources.mjs && tsc -p tsconfig.build.json",
@@ -21,5 +24,16 @@
     "typescript": "^5.7.3",
     "vitest": "^3.2.4",
     "@types/node": "^22.10.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./negotiation": {
+      "types": "./dist/negotiation.d.ts",
+      "default": "./dist/negotiation.js"
+    },
+    "./package.json": "./package.json"
   }
 }

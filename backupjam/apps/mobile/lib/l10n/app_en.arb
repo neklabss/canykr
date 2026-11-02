@@ -453,5 +453,191 @@
         "type": "String"
       }
     }
+  },
+  "commonSkipToContent": "Skip to content",
+  "@commonSkipToContent": {
+    "description": "Key: common.skipToContent"
+  },
+  "commonComingSoon": "This section opens in an upcoming release.",
+  "@commonComingSoon": {
+    "description": "Key: common.comingSoon"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Key: common.save"
+  },
+  "commonSaved": "Saved",
+  "@commonSaved": {
+    "description": "Key: common.saved"
+  },
+  "footerCopyright": "© {year} BackUpJam. All rights reserved.",
+  "@footerCopyright": {
+    "description": "Key: footer.copyright",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "legalDraftNotice": "This document is a draft pending legal review.",
+  "@legalDraftNotice": {
+    "description": "Key: legal.draftNotice"
+  },
+  "authAcceptTerms": "I agree to the Terms of Service and Privacy Policy.",
+  "@authAcceptTerms": {
+    "description": "Key: auth.acceptTerms"
+  },
+  "authNewPassword": "New password",
+  "@authNewPassword": {
+    "description": "Key: auth.newPassword"
+  },
+  "authVerifyEmailSuccess": "Your email address is verified.",
+  "@authVerifyEmailSuccess": {
+    "description": "Key: auth.verifyEmailSuccess"
+  },
+  "authResetPasswordSuccess": "Your password was changed. Please sign in again.",
+  "@authResetPasswordSuccess": {
+    "description": "Key: auth.resetPasswordSuccess"
+  },
+  "authResetLinkSent": "If an account exists for this email, we sent a reset link.",
+  "@authResetLinkSent": {
+    "description": "Key: auth.resetLinkSent"
+  },
+  "dashboardWelcome": "Welcome, {name}",
+  "@dashboardWelcome": {
+    "description": "Key: dashboard.welcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardVerifyEmailBanner": "Verify your email address to create bands and venues.",
+  "@dashboardVerifyEmailBanner": {
+    "description": "Key: dashboard.verifyEmailBanner"
+  },
+  "adminTitle": "BackUpJam Admin",
+  "@adminTitle": {
+    "description": "Key: admin.title"
+  },
+  "adminOverview": "Overview",
+  "@adminOverview": {
+    "description": "Key: admin.overview"
+  },
+  "adminUsers": "Users",
+  "@adminUsers": {
+    "description": "Key: admin.users"
+  },
+  "adminAuditLog": "Audit log",
+  "@adminAuditLog": {
+    "description": "Key: admin.auditLog"
+  },
+  "adminFeatureFlags": "Feature flags",
+  "@adminFeatureFlags": {
+    "description": "Key: admin.featureFlags"
+  },
+  "adminCountries": "Countries",
+  "@adminCountries": {
+    "description": "Key: admin.countries"
+  },
+  "adminNotStaff": "This account has no staff access.",
+  "@adminNotStaff": {
+    "description": "Key: admin.notStaff"
+  },
+  "adminSuspend": "Suspend",
+  "@adminSuspend": {
+    "description": "Key: admin.suspend"
+  },
+  "adminUnsuspend": "Reactivate",
+  "@adminUnsuspend": {
+    "description": "Key: admin.unsuspend"
+  },
+  "adminReason": "Reason",
+  "@adminReason": {
+    "description": "Key: admin.reason"
+  },
+  "adminSearch": "Search",
+  "@adminSearch": {
+    "description": "Key: admin.search"
+  },
+  "adminStatus": "Status",
+  "@adminStatus": {
+    "description": "Key: admin.status"
+  },
+  "adminLoadMore": "Load more",
+  "@adminLoadMore": {
+    "description": "Key: admin.loadMore"
+  },
+  "adminMetricActive_users": "Active users",
+  "@adminMetricActive_users": {
+    "description": "Key: admin.metric.active_users"
+  },
+  "adminMetricSuspended_users": "Suspended users",
+  "@adminMetricSuspended_users": {
+    "description": "Key: admin.metric.suspended_users"
+  },
+  "adminMetricPending_deletion_users": "Pending deletion",
+  "@adminMetricPending_deletion_users": {
+    "description": "Key: admin.metric.pending_deletion_users"
+  },
+  "adminMetricSignups_7d": "Sign-ups (7 days)",
+  "@adminMetricSignups_7d": {
+    "description": "Key: admin.metric.signups_7d"
+  },
+  "adminMetricMusicians": "Musicians",
+  "@adminMetricMusicians": {
+    "description": "Key: admin.metric.musicians"
+  },
+  "adminMetricBands": "Bands",
+  "@adminMetricBands": {
+    "description": "Key: admin.metric.bands"
+  },
+  "adminMetricVenues": "Venues",
+  "@adminMetricVenues": {
+    "description": "Key: admin.metric.venues"
+  },
+  "adminMetricOrganizers": "Organizers",
+  "@adminMetricOrganizers": {
+    "description": "Key: admin.metric.organizers"
+  },
+  "authResendVerification": "Resend verification email",
+  "@authResendVerification": {
+    "description": "Key: auth.resendVerification"
+  },
+  "adminColAction": "Action",
+  "@adminColAction": {
+    "description": "Key: admin.col.action"
+  },
+  "adminColActor": "Actor",
+  "@adminColActor": {
+    "description": "Key: admin.col.actor"
+  },
+  "adminColTarget": "Target",
+  "@adminColTarget": {
+    "description": "Key: admin.col.target"
+  },
+  "adminColMetadata": "Details",
+  "@adminColMetadata": {
+    "description": "Key: admin.col.metadata"
+  },
+  "adminColKey": "Key",
+  "@adminColKey": {
+    "description": "Key: admin.col.key"
+  },
+  "adminColDescription": "Description",
+  "@adminColDescription": {
+    "description": "Key: admin.col.description"
+  },
+  "adminColRules": "Rules",
+  "@adminColRules": {
+    "description": "Key: admin.col.rules"
+  },
+  "adminColLaunch": "Launch",
+  "@adminColLaunch": {
+    "description": "Key: admin.col.launch"
+  },
+  "adminColPayments": "Payments",
+  "@adminColPayments": {
+    "description": "Key: admin.col.payments"
   }
 }
