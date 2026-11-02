@@ -1,0 +1,643 @@
+{
+  "@@locale": "en",
+  "appName": "BackUpJam",
+  "@appName": {
+    "description": "Key: app.name"
+  },
+  "appTagline": "Find musicians. Get booked. Play more.",
+  "@appTagline": {
+    "description": "Key: app.tagline"
+  },
+  "navDiscover": "Discover",
+  "@navDiscover": {
+    "description": "Key: nav.discover"
+  },
+  "navJobs": "Jobs",
+  "@navJobs": {
+    "description": "Key: nav.jobs"
+  },
+  "navCreate": "Create",
+  "@navCreate": {
+    "description": "Key: nav.create"
+  },
+  "navMessages": "Messages",
+  "@navMessages": {
+    "description": "Key: nav.messages"
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Key: nav.profile"
+  },
+  "navMusicians": "Musicians",
+  "@navMusicians": {
+    "description": "Key: nav.musicians"
+  },
+  "navBands": "Bands",
+  "@navBands": {
+    "description": "Key: nav.bands"
+  },
+  "navVenues": "Venues",
+  "@navVenues": {
+    "description": "Key: nav.venues"
+  },
+  "navEvents": "Events",
+  "@navEvents": {
+    "description": "Key: nav.events"
+  },
+  "navChallenges": "Challenges",
+  "@navChallenges": {
+    "description": "Key: nav.challenges"
+  },
+  "navBookings": "Bookings",
+  "@navBookings": {
+    "description": "Key: nav.bookings"
+  },
+  "navOffers": "Offers",
+  "@navOffers": {
+    "description": "Key: nav.offers"
+  },
+  "navNotifications": "Notifications",
+  "@navNotifications": {
+    "description": "Key: nav.notifications"
+  },
+  "navSaved": "Saved",
+  "@navSaved": {
+    "description": "Key: nav.saved"
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Key: nav.settings"
+  },
+  "authSignIn": "Sign in",
+  "@authSignIn": {
+    "description": "Key: auth.signIn"
+  },
+  "authSignUp": "Create account",
+  "@authSignUp": {
+    "description": "Key: auth.signUp"
+  },
+  "authSignOut": "Sign out",
+  "@authSignOut": {
+    "description": "Key: auth.signOut"
+  },
+  "authEmail": "Email",
+  "@authEmail": {
+    "description": "Key: auth.email"
+  },
+  "authPassword": "Password",
+  "@authPassword": {
+    "description": "Key: auth.password"
+  },
+  "authDisplayName": "Display name",
+  "@authDisplayName": {
+    "description": "Key: auth.displayName"
+  },
+  "authForgotPassword": "Forgot password?",
+  "@authForgotPassword": {
+    "description": "Key: auth.forgotPassword"
+  },
+  "authResetPassword": "Reset password",
+  "@authResetPassword": {
+    "description": "Key: auth.resetPassword"
+  },
+  "authContinueWithGoogle": "Continue with Google",
+  "@authContinueWithGoogle": {
+    "description": "Key: auth.continueWithGoogle"
+  },
+  "authContinueWithApple": "Continue with Apple",
+  "@authContinueWithApple": {
+    "description": "Key: auth.continueWithApple"
+  },
+  "authVerifyEmailSent": "We sent a verification link to {email}.",
+  "@authVerifyEmailSent": {
+    "description": "Key: auth.verifyEmailSent",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authPasswordHint": "At least 10 characters.",
+  "@authPasswordHint": {
+    "description": "Key: auth.passwordHint"
+  },
+  "authNoAccount": "New to BackUpJam?",
+  "@authNoAccount": {
+    "description": "Key: auth.noAccount"
+  },
+  "authHaveAccount": "Already have an account?",
+  "@authHaveAccount": {
+    "description": "Key: auth.haveAccount"
+  },
+  "onboardingTitle": "Tell us about yourself",
+  "@onboardingTitle": {
+    "description": "Key: onboarding.title"
+  },
+  "onboardingActivity": "What describes your activity?",
+  "@onboardingActivity": {
+    "description": "Key: onboarding.activity"
+  },
+  "onboardingInstruments": "What instruments do you play?",
+  "@onboardingInstruments": {
+    "description": "Key: onboarding.instruments"
+  },
+  "onboardingGenres": "What music genres do you perform?",
+  "@onboardingGenres": {
+    "description": "Key: onboarding.genres"
+  },
+  "onboardingCity": "Which city are you based in?",
+  "@onboardingCity": {
+    "description": "Key: onboarding.city"
+  },
+  "onboardingAvailableForBookings": "Are you available for professional bookings?",
+  "@onboardingAvailableForBookings": {
+    "description": "Key: onboarding.availableForBookings"
+  },
+  "onboardingDiscoverGoals": "What do you want to discover?",
+  "@onboardingDiscoverGoals": {
+    "description": "Key: onboarding.discoverGoals"
+  },
+  "onboardingLanguages": "What languages do you speak?",
+  "@onboardingLanguages": {
+    "description": "Key: onboarding.languages"
+  },
+  "onboardingTravel": "Where are you willing to travel?",
+  "@onboardingTravel": {
+    "description": "Key: onboarding.travel"
+  },
+  "onboardingSkip": "Skip",
+  "@onboardingSkip": {
+    "description": "Key: onboarding.skip"
+  },
+  "onboardingContinue": "Continue",
+  "@onboardingContinue": {
+    "description": "Key: onboarding.continue"
+  },
+  "createTitle": "What do you want to create?",
+  "@createTitle": {
+    "description": "Key: create.title"
+  },
+  "createJob": "Post a job",
+  "@createJob": {
+    "description": "Key: create.job"
+  },
+  "createService": "Offer a service",
+  "@createService": {
+    "description": "Key: create.service"
+  },
+  "createBand": "Create a band",
+  "@createBand": {
+    "description": "Key: create.band"
+  },
+  "createEvent": "Create an event",
+  "@createEvent": {
+    "description": "Key: create.event"
+  },
+  "createChallenge": "Start a challenge",
+  "@createChallenge": {
+    "description": "Key: create.challenge"
+  },
+  "createVenue": "Add a venue",
+  "@createVenue": {
+    "description": "Key: create.venue"
+  },
+  "statesLoading": "Loading…",
+  "@statesLoading": {
+    "description": "Key: states.loading"
+  },
+  "statesEmptyTitle": "Nothing here yet",
+  "@statesEmptyTitle": {
+    "description": "Key: states.emptyTitle"
+  },
+  "statesEmptyBody": "When there is something to show, it will appear here.",
+  "@statesEmptyBody": {
+    "description": "Key: states.emptyBody"
+  },
+  "statesErrorTitle": "Something went wrong",
+  "@statesErrorTitle": {
+    "description": "Key: states.errorTitle"
+  },
+  "statesErrorBody": "Please try again in a moment.",
+  "@statesErrorBody": {
+    "description": "Key: states.errorBody"
+  },
+  "statesRetry": "Try again",
+  "@statesRetry": {
+    "description": "Key: states.retry"
+  },
+  "statesOfflineTitle": "You are offline",
+  "@statesOfflineTitle": {
+    "description": "Key: states.offlineTitle"
+  },
+  "statesOfflineBody": "Check your connection. We will reconnect automatically.",
+  "@statesOfflineBody": {
+    "description": "Key: states.offlineBody"
+  },
+  "statesPermissionDeniedTitle": "Access needed",
+  "@statesPermissionDeniedTitle": {
+    "description": "Key: states.permissionDeniedTitle"
+  },
+  "statesPermissionDeniedBody": "You do not have permission to view this.",
+  "@statesPermissionDeniedBody": {
+    "description": "Key: states.permissionDeniedBody"
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Key: settings.language"
+  },
+  "settingsLanguageAuto": "Use device language",
+  "@settingsLanguageAuto": {
+    "description": "Key: settings.languageAuto"
+  },
+  "settingsCountry": "Country or region",
+  "@settingsCountry": {
+    "description": "Key: settings.country"
+  },
+  "settingsCurrency": "Display currency",
+  "@settingsCurrency": {
+    "description": "Key: settings.currency"
+  },
+  "settingsTimeZone": "Time zone",
+  "@settingsTimeZone": {
+    "description": "Key: settings.timeZone"
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "Key: settings.theme"
+  },
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {
+    "description": "Key: settings.themeSystem"
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Key: settings.themeLight"
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Key: settings.themeDark"
+  },
+  "priceFrom": "From {price}",
+  "@priceFrom": {
+    "description": "Key: price.from",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceNegotiable": "Negotiable",
+  "@priceNegotiable": {
+    "description": "Key: price.negotiable"
+  },
+  "priceConvertedNotice": "Approximate amount. You will pay in {currency}.",
+  "@priceConvertedNotice": {
+    "description": "Key: price.convertedNotice",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "jobsCount": "{count,plural,one{{count} job} other{{count} jobs}}",
+  "@jobsCount": {
+    "description": "Key: jobs.count",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "messagesUnread": "{count,plural,one{{count} unread message} other{{count} unread messages}}",
+  "@messagesUnread": {
+    "description": "Key: messages.unread",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "badgeIdentityVerified": "Identity verified",
+  "@badgeIdentityVerified": {
+    "description": "Key: badge.identityVerified"
+  },
+  "badgeOfficialBand": "Official band",
+  "@badgeOfficialBand": {
+    "description": "Key: badge.officialBand"
+  },
+  "badgeOfficialArtist": "Official artist",
+  "@badgeOfficialArtist": {
+    "description": "Key: badge.officialArtist"
+  },
+  "badgeVerifiedVenue": "Verified venue",
+  "@badgeVerifiedVenue": {
+    "description": "Key: badge.verifiedVenue"
+  },
+  "badgeVerifiedOrganizer": "Verified organizer",
+  "@badgeVerifiedOrganizer": {
+    "description": "Key: badge.verifiedOrganizer"
+  },
+  "badgeWhatIsThis": "What does this badge mean?",
+  "@badgeWhatIsThis": {
+    "description": "Key: badge.whatIsThis"
+  },
+  "sponsoredLabel": "Sponsored",
+  "@sponsoredLabel": {
+    "description": "Key: sponsored.label"
+  },
+  "translationAiDisclosure": "Automatically translated from {language}.",
+  "@translationAiDisclosure": {
+    "description": "Key: translation.aiDisclosure",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "translationShowOriginal": "Show original",
+  "@translationShowOriginal": {
+    "description": "Key: translation.showOriginal"
+  },
+  "legalPrivacy": "Privacy Policy",
+  "@legalPrivacy": {
+    "description": "Key: legal.privacy"
+  },
+  "legalTerms": "Terms of Service",
+  "@legalTerms": {
+    "description": "Key: legal.terms"
+  },
+  "legalGuidelines": "Community Guidelines",
+  "@legalGuidelines": {
+    "description": "Key: legal.guidelines"
+  },
+  "helpCenter": "Help Center",
+  "@helpCenter": {
+    "description": "Key: help.center"
+  },
+  "contactUs": "Contact",
+  "@contactUs": {
+    "description": "Key: contact.us"
+  },
+  "landingHeroTitle": "The stage is set. Find who plays next.",
+  "@landingHeroTitle": {
+    "description": "Key: landing.heroTitle"
+  },
+  "landingHeroBody": "Book musicians and bands, find gigs, and connect with venues and organizers around the world.",
+  "@landingHeroBody": {
+    "description": "Key: landing.heroBody"
+  },
+  "landingCtaFindMusicians": "Find musicians",
+  "@landingCtaFindMusicians": {
+    "description": "Key: landing.ctaFindMusicians"
+  },
+  "landingCtaFindGigs": "Find gigs",
+  "@landingCtaFindGigs": {
+    "description": "Key: landing.ctaFindGigs"
+  },
+  "errorsInvalidCredentials": "Email or password is incorrect.",
+  "@errorsInvalidCredentials": {
+    "description": "Key: errors.invalidCredentials"
+  },
+  "errorsEmailTaken": "An account with this email already exists.",
+  "@errorsEmailTaken": {
+    "description": "Key: errors.emailTaken"
+  },
+  "errorsWeakPassword": "Choose a stronger password.",
+  "@errorsWeakPassword": {
+    "description": "Key: errors.weakPassword"
+  },
+  "errorsRateLimited": "Too many attempts. Please wait and try again.",
+  "@errorsRateLimited": {
+    "description": "Key: errors.rateLimited"
+  },
+  "errorsUnauthorized": "Please sign in to continue.",
+  "@errorsUnauthorized": {
+    "description": "Key: errors.unauthorized"
+  },
+  "errorsForbidden": "You do not have permission to do this.",
+  "@errorsForbidden": {
+    "description": "Key: errors.forbidden"
+  },
+  "errorsNotFound": "We could not find what you were looking for.",
+  "@errorsNotFound": {
+    "description": "Key: errors.notFound"
+  },
+  "errorsValidation": "Please check the highlighted fields.",
+  "@errorsValidation": {
+    "description": "Key: errors.validation"
+  },
+  "emailVerifySubject": "Confirm your BackUpJam email",
+  "@emailVerifySubject": {
+    "description": "Key: email.verify.subject"
+  },
+  "emailVerifyBody": "Welcome to BackUpJam! Confirm your email address by opening this link: {link}\n\nIf you did not create an account, you can ignore this message.",
+  "@emailVerifyBody": {
+    "description": "Key: email.verify.body",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "emailResetSubject": "Reset your BackUpJam password",
+  "@emailResetSubject": {
+    "description": "Key: email.reset.subject"
+  },
+  "emailResetBody": "We received a request to reset your password. Open this link to choose a new one: {link}\n\nThe link expires in 1 hour. If you did not request this, ignore this message.",
+  "@emailResetBody": {
+    "description": "Key: email.reset.body",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "commonSkipToContent": "Skip to content",
+  "@commonSkipToContent": {
+    "description": "Key: common.skipToContent"
+  },
+  "commonComingSoon": "This section opens in an upcoming release.",
+  "@commonComingSoon": {
+    "description": "Key: common.comingSoon"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Key: common.save"
+  },
+  "commonSaved": "Saved",
+  "@commonSaved": {
+    "description": "Key: common.saved"
+  },
+  "footerCopyright": "© {year} BackUpJam. All rights reserved.",
+  "@footerCopyright": {
+    "description": "Key: footer.copyright",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "legalDraftNotice": "This document is a draft pending legal review.",
+  "@legalDraftNotice": {
+    "description": "Key: legal.draftNotice"
+  },
+  "authAcceptTerms": "I agree to the Terms of Service and Privacy Policy.",
+  "@authAcceptTerms": {
+    "description": "Key: auth.acceptTerms"
+  },
+  "authNewPassword": "New password",
+  "@authNewPassword": {
+    "description": "Key: auth.newPassword"
+  },
+  "authVerifyEmailSuccess": "Your email address is verified.",
+  "@authVerifyEmailSuccess": {
+    "description": "Key: auth.verifyEmailSuccess"
+  },
+  "authResetPasswordSuccess": "Your password was changed. Please sign in again.",
+  "@authResetPasswordSuccess": {
+    "description": "Key: auth.resetPasswordSuccess"
+  },
+  "authResetLinkSent": "If an account exists for this email, we sent a reset link.",
+  "@authResetLinkSent": {
+    "description": "Key: auth.resetLinkSent"
+  },
+  "dashboardWelcome": "Welcome, {name}",
+  "@dashboardWelcome": {
+    "description": "Key: dashboard.welcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardVerifyEmailBanner": "Verify your email address to create bands and venues.",
+  "@dashboardVerifyEmailBanner": {
+    "description": "Key: dashboard.verifyEmailBanner"
+  },
+  "adminTitle": "BackUpJam Admin",
+  "@adminTitle": {
+    "description": "Key: admin.title"
+  },
+  "adminOverview": "Overview",
+  "@adminOverview": {
+    "description": "Key: admin.overview"
+  },
+  "adminUsers": "Users",
+  "@adminUsers": {
+    "description": "Key: admin.users"
+  },
+  "adminAuditLog": "Audit log",
+  "@adminAuditLog": {
+    "description": "Key: admin.auditLog"
+  },
+  "adminFeatureFlags": "Feature flags",
+  "@adminFeatureFlags": {
+    "description": "Key: admin.featureFlags"
+  },
+  "adminCountries": "Countries",
+  "@adminCountries": {
+    "description": "Key: admin.countries"
+  },
+  "adminNotStaff": "This account has no staff access.",
+  "@adminNotStaff": {
+    "description": "Key: admin.notStaff"
+  },
+  "adminSuspend": "Suspend",
+  "@adminSuspend": {
+    "description": "Key: admin.suspend"
+  },
+  "adminUnsuspend": "Reactivate",
+  "@adminUnsuspend": {
+    "description": "Key: admin.unsuspend"
+  },
+  "adminReason": "Reason",
+  "@adminReason": {
+    "description": "Key: admin.reason"
+  },
+  "adminSearch": "Search",
+  "@adminSearch": {
+    "description": "Key: admin.search"
+  },
+  "adminStatus": "Status",
+  "@adminStatus": {
+    "description": "Key: admin.status"
+  },
+  "adminLoadMore": "Load more",
+  "@adminLoadMore": {
+    "description": "Key: admin.loadMore"
+  },
+  "adminMetricActive_users": "Active users",
+  "@adminMetricActive_users": {
+    "description": "Key: admin.metric.active_users"
+  },
+  "adminMetricSuspended_users": "Suspended users",
+  "@adminMetricSuspended_users": {
+    "description": "Key: admin.metric.suspended_users"
+  },
+  "adminMetricPending_deletion_users": "Pending deletion",
+  "@adminMetricPending_deletion_users": {
+    "description": "Key: admin.metric.pending_deletion_users"
+  },
+  "adminMetricSignups_7d": "Sign-ups (7 days)",
+  "@adminMetricSignups_7d": {
+    "description": "Key: admin.metric.signups_7d"
+  },
+  "adminMetricMusicians": "Musicians",
+  "@adminMetricMusicians": {
+    "description": "Key: admin.metric.musicians"
+  },
+  "adminMetricBands": "Bands",
+  "@adminMetricBands": {
+    "description": "Key: admin.metric.bands"
+  },
+  "adminMetricVenues": "Venues",
+  "@adminMetricVenues": {
+    "description": "Key: admin.metric.venues"
+  },
+  "adminMetricOrganizers": "Organizers",
+  "@adminMetricOrganizers": {
+    "description": "Key: admin.metric.organizers"
+  },
+  "authResendVerification": "Resend verification email",
+  "@authResendVerification": {
+    "description": "Key: auth.resendVerification"
+  },
+  "adminColAction": "Action",
+  "@adminColAction": {
+    "description": "Key: admin.col.action"
+  },
+  "adminColActor": "Actor",
+  "@adminColActor": {
+    "description": "Key: admin.col.actor"
+  },
+  "adminColTarget": "Target",
+  "@adminColTarget": {
+    "description": "Key: admin.col.target"
+  },
+  "adminColMetadata": "Details",
+  "@adminColMetadata": {
+    "description": "Key: admin.col.metadata"
+  },
+  "adminColKey": "Key",
+  "@adminColKey": {
+    "description": "Key: admin.col.key"
+  },
+  "adminColDescription": "Description",
+  "@adminColDescription": {
+    "description": "Key: admin.col.description"
+  },
+  "adminColRules": "Rules",
+  "@adminColRules": {
+    "description": "Key: admin.col.rules"
+  },
+  "adminColLaunch": "Launch",
+  "@adminColLaunch": {
+    "description": "Key: admin.col.launch"
+  },
+  "adminColPayments": "Payments",
+  "@adminColPayments": {
+    "description": "Key: admin.col.payments"
+  }
+}

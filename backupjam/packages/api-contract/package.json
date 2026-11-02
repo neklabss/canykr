@@ -1,0 +1,19 @@
+{
+  "name": "@backupjam/api-contract",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared BackUpJam API contract: enums, role/permission matrix, DTO types, error codes and the exported OpenAPI document.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "openapi.json"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.10.0"
+  }
+}

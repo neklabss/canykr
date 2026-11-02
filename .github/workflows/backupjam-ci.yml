@@ -1,0 +1,65 @@
+name: BackUpJam CI
+
+on:
+  push:
+    paths: ["backupjam/**", ".github/workflows/backupjam-ci.yml"]
+  pull_request:
+    paths: ["backupjam/**", ".github/workflows/backupjam-ci.yml"]
+
+defaults:
+  run:
+    working-directory: backupjam
+
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env: { POSTGRES_USER: backupjam, POSTGRES_PASSWORD: backupjam, POSTGRES_DB: backupjam_test }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U backupjam" --health-interval 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: backupjam/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+      - name: Build shared packages
+        run: pnpm -r --filter "./packages/*" build
+      - name: i18n completeness, plural categories, negotiation
+        run: pnpm --filter @backupjam/i18n test
+      - name: Design tokens (WCAG AA contrast)
+        run: pnpm tokens
+      - name: Domain, contract and client unit tests
+        run: |
+          pnpm --filter @backupjam/domain test
+          pnpm --filter @backupjam/api-contract test
+          pnpm --filter @backupjam/api-client test
+      - name: ARB export is up to date
+        run: pnpm i18n:arb && git diff --exit-code -- apps/mobile/lib/l10n
+      - name: Typecheck
+        run: pnpm -r typecheck
+      - name: API unit + e2e (real Postgres/PostGIS)
+        env: { TEST_DATABASE_URL: "postgres://backupjam:backupjam@localhost:5432/backupjam_test" }
+        run: pnpm --filter @backupjam/api test
+      - name: OpenAPI contract is up to date
+        run: pnpm openapi && git diff --exit-code -- packages/api-contract/openapi.json
+      - name: Build web + admin
+        run: pnpm --filter @backupjam/web build && pnpm --filter @backupjam/admin build
+
+  flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backupjam/apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter analyze
+      - run: flutter test
