@@ -49,6 +49,8 @@
   const resultsEl = document.getElementById('field-results');
   const summary = document.getElementById('error-summary');
   const errorList = document.getElementById('error-list');
+  const pasteText = document.getElementById('paste-text');
+  const pasteBtn = document.getElementById('paste-btn');
 
   let pendingTabId = null;
   let pendingTimer = null;
@@ -111,9 +113,44 @@
     }
   }
 
+  function clearGuessed(f) {
+    const el = input(f);
+    el.classList.remove('guessed');
+    el.removeAttribute('data-guessed');
+  }
+
   function clearInputs() {
-    for (const f of FIELDS) input(f).value = '';
+    for (const f of FIELDS) { input(f).value = ''; clearGuessed(f); }
+    pasteText.value = '';
     clearFieldErrors();
+  }
+
+  function applyPaste() {
+    const parsed = globalThis.NviPasteParser.parseCustomerText(pasteText.value);
+    pasteText.value = ''; // ham metin panelde tutulmaz
+    const found = FIELDS.filter((f) => parsed.fields[f] !== undefined);
+    const guessed = found.filter((f) => parsed.source[f] === 'guessed');
+    for (const f of found) {
+      input(f).value = parsed.fields[f];
+      clearGuessed(f);
+      if (guessed.includes(f)) { input(f).classList.add('guessed'); input(f).dataset.guessed = 'true'; }
+    }
+    clearFieldErrors();
+    renderResults(null);
+    const notes = [];
+    if (parsed.warnings.includes('multiple_tckn')) notes.push('Metinde birden fazla geçerli T.C. Kimlik No var; numarayı elle girin.');
+    if (parsed.warnings.includes('multiple_years')) notes.push('Metinde birden fazla yıl var; doğum yılını elle girin.');
+    if (!found.length) {
+      setStatus(['Metinden alan çıkarılamadı.'].concat(notes).join(' '), 'warn');
+      pasteText.focus();
+      return;
+    }
+    const missing = FIELDS.filter((f) => !found.includes(f));
+    let msg = found.length + ' alan dolduruldu.';
+    if (guessed.length) msg += ' Tahmin edilen alanları kontrol edin: ' + guessed.map((f) => FIELD_LABELS[f]).join(', ') + '.';
+    if (missing.length) msg += ' Eksik: ' + missing.map((f) => FIELD_LABELS[f]).join(', ') + '.';
+    setStatus([msg].concat(notes).join(' '), guessed.length || missing.length || notes.length ? 'warn' : 'ok');
+    input(missing[0] || guessed[0] || 'tckn').focus();
   }
 
   function stopPending() {
@@ -208,6 +245,12 @@
     input('tckn').focus();
   });
 
+  pasteBtn.addEventListener('click', () => { resetIdle(); applyPaste(); });
+  pasteText.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); resetIdle(); applyPaste(); }
+  });
+  // Görevli bir alanı elle düzelttiğinde "tahmin" işareti kalkar.
+  form.addEventListener('input', (ev) => { if (FIELDS.includes(ev.target.id)) clearGuessed(ev.target.id); });
   form.addEventListener('input', resetIdle);
 
   chrome.runtime.onMessage.addListener((msg, sender) => {

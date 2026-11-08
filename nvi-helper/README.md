@@ -25,12 +25,22 @@ Güvenlik kodunu girip **Sorgula**'ya basmak ve sonucu NVI sayfasından okumak g
 2. **Paketlenmemiş öğe yükle** → bu `nvi-helper/` klasörünü seçin.
 3. Araç çubuğundaki simgeye tıklayınca yan panel açılır.
 
+Başka bilgisayarlara dağıtmak için `npm run pack` yalnızca çalışma dosyalarını (manifest ve
+`src/`) içeren `dist/nvi-helper-<sürüm>.zip` üretir; demo ve testler pakete girmez. Zip açılıp
+aynı şekilde "Paketlenmemiş öğe yükle" ile kurulur. Kurumsal zorunlu kurulum (Chrome/Edge
+politikası veya mağaza) için ayrıca imzalı paket ve barındırma kararı gerekir.
+
 ## Kullanım
 
 1. NVI'de T.C. Kimlik No Doğrulama sayfasını açın.
-2. Yan panelde dört alanı doldurup **NVI formuna aktar**'a basın.
-3. Paneldeki alan listesinde her alanın durumunu kontrol edin (Dolduruldu / Korundu / Belirsiz / Salt okunur …).
-4. Güvenlik kodunu girip sorguyu kendiniz başlatın.
+2. Yan panelde dört alanı doldurun **ya da** müşteri bilgisini (mesaj, e-posta, tablo satırı)
+   **Yapıştırarak doldur** kutusuna yapıştırıp **Alanlara dağıt**'a (veya Ctrl+Enter) basın.
+   Etiketsiz metinden tahmin edilen alanlar kesikli çerçeveyle işaretlenir; kontrol edin.
+   Yapıştırılan ham metin ayrıştırıldıktan hemen sonra silinir. Yapıştırma NVI formuna
+   **yazmaz**, yalnızca panel alanlarını doldurur.
+3. **NVI formuna aktar**'a basın.
+4. Paneldeki alan listesinde her alanın durumunu kontrol edin (Dolduruldu / Korundu / Belirsiz / Salt okunur …).
+5. Güvenlik kodunu girip sorguyu kendiniz başlatın.
 
 Sayfa henüz yükleniyorsa veri en fazla **2 dakika** bekletilir ve sayfa yüklenince doldurulur.
 
@@ -41,6 +51,7 @@ src/panel.html|js|css   Yan panel (erişilebilir form, hata özeti, canlı durum
 src/background.js       Service worker: yeniden doğrulama, URL kontrolü, enjeksiyon, bekleyen kayıtlar
 src/filler.js           Alan eşleştirme ve doldurma (sayfaya istek anında enjekte edilir)
 src/validation.js       Biçim kontrolleri (kontrol basamağı, ad, yıl, tarih)
+src/paste-parser.js     Yapıştırılan serbest metinden alan ayrıştırma (yalnızca panelde)
 src/session-store.js    Sekmeye bağlı, TTL'li bekleyen kayıtlar (chrome.storage.session)
 demo/                   Yerel demo (SİMÜLASYON)
 test/                   Birim, tarayıcı ve uçtan uca testler
@@ -68,11 +79,23 @@ sekmeye enjekte eder → sonuç (yalnızca durum kodları, kişisel veri yok) pa
   o çerçeve doldurulur; birden fazla çerçevede form varsa **hiçbiri doldurulmaz**
   (`multiple_forms`). İzin olmayan (NVI dışı) iframe'lere enjeksiyon yapılmaz.
 
+### Yapıştırma ayrıştırma kuralları
+
+- Öncelik: `Etiket: değer` satırları ve sekmeyle ayrılmış başlık + değer satırı (tablodan
+  kopyalama) → etiketsiz tahmin. Etiketli değer her zaman tahmine üstün gelir.
+- T.C. Kimlik No yalnızca kontrol basamakları tutan 11 haneli sayıdan alınır (telefon numarası
+  vb. elenir). Birden fazla geçerli numara veya yıl varsa alan boş bırakılır ve uyarılır.
+- Doğum tarihi verilirse yalnızca yılı alınır; gelecekteki ve 1900 öncesi yıllar reddedilir.
+- "Ad Soyad" tek alandaysa son kelime soyad sayılır; üç ve daha fazla kelimede bu bir tahmindir
+  ve işaretlenir. Parantez içi notlar ve rakamlar addan temizlenir.
+
 ## Gizlilik, izinler ve veri saklama
 
 - **İzinler:** `storage`, `scripting`, `sidePanel`, `alarms`; host izni yalnızca
   `https://tckimlik.nvi.gov.tr/*`. `tabs` izni, kalıcı içerik betiği, uzak kod veya harici
   bağlantı (`externally_connectable`) yoktur.
+- Yapıştırılan ham metin ayrıştırıldıktan hemen sonra panelden silinir; panoya erişim izni
+  yoktur (yalnızca görevlinin yapıştırdığı metin işlenir).
 - Panel verisi yalnızca panel sayfasının belleğindedir. Başarılı aktarımdan sonra (varsayılan),
   **Temizle** ile, 5 dakika boşta kalınca veya panel kapanınca silinir.
 - Bekleyen kayıt yalnızca sekme henüz yüklenmiyorsa `chrome.storage.session`'a (diske yazılmaz,
@@ -110,6 +133,10 @@ CI: `.github/workflows/nvi-helper.yml`, `nvi-helper/` değiştiğinde aynı test
 - `test/validation.test.cjs` — kontrol basamakları, ad, yıl ve tarih kontrolleri.
   **Bunlar gerçek kimlik doğrulaması değildir.**
 - `test/session-store.test.cjs` — TTL, tek kullanımlık okuma, sekme yalıtımı, temizlik.
+- `test/paste-parser.test.cjs` — etiketli satırlar, tablo satırı, etiketsiz tahmin, telefon gibi
+  kontrol basamağı tutmayan sayıların reddi, birden fazla aday olduğunda alanı boş bırakma.
+- `test/pack.test.cjs` — paket içeriği, manifest/panel başvurularının pakette olması, zip'in
+  bağımsız bir okuyucuyla (Python `zipfile`) doğrulanması, tekrarlanabilirlik.
 - `test/filler.browser.test.cjs` — simülasyon formunda doldurma, değer koruma, belirsiz alan,
   geç yükleme, zaman aşımı, readonly/sanal klavye, disabled, reddedilen değer, CAPTCHA'ya ve
   gönder düğmesine dokunulmaması, sonuçta kişisel veri olmaması, demo sayfası.
@@ -119,7 +146,7 @@ CI: `.github/workflows/nvi-helper.yml`, `nvi-helper/` değiştiğinde aynı test
   istekleri engellenir ve test bunu doğrular). Kapsam: panelden aktarım, panel doğrulaması ve
   hata özeti, NVI dışı sekme / yanlış modül, yüklenirken bekletme, sekme kapanınca ve başka
   adrese gidince silme, iptal, iframe içindeki form, NVI dışı iframe, iki çerçevede form
-  (doldurulmaz), geç yüklenen alanlar, **service worker kapatılıp yeniden başlatılınca bekleyen
+  (doldurulmaz), geç yüklenen alanlar, yapıştırarak doldurma, **service worker kapatılıp yeniden başlatılınca bekleyen
   doldurmanın tamamlanması**, sanal klavye, zaman aşımı, kapalı sekme, erişilebilirlik temelleri.
 
 Erişilebilirlik: panel (normal ve hata durumu) ve demo, açık ve koyu temada axe-core 4.10

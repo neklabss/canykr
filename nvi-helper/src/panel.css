@@ -82,3 +82,16 @@ button[disabled] { opacity: .6; cursor: progress; }
 .field-results li { padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent); }
 .field-results li span { font-weight: 600; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+}
+.paste { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 16px; }
+.paste .hint { margin-bottom: 8px; }
+input.guessed { border: 2px dashed var(--warn); }

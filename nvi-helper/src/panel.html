@@ -19,6 +19,14 @@
       <ul id="error-list"></ul>
     </div>
 
+    <section class="paste" aria-labelledby="paste-heading">
+      <h2 id="paste-heading">Yapıştırarak doldur</h2>
+      <label for="paste-text">Müşteri bilgisi (mesaj, e-posta veya tablo satırı)</label>
+      <textarea id="paste-text" rows="3" autocomplete="off" spellcheck="false" aria-describedby="paste-hint"></textarea>
+      <p class="hint" id="paste-hint">Metin yalnızca bu panelde işlenir ve ayrıştırıldıktan sonra silinir. Sonuçları kontrol etmeden aktarmayın.</p>
+      <button type="button" id="paste-btn" class="secondary">Alanlara dağıt</button>
+    </section>
+
     <form id="fill-form" novalidate autocomplete="off">
       <div class="field">
         <label for="tckn">T.C. Kimlik No</label>
@@ -60,6 +68,7 @@
     </section>
   </main>
   <script src="validation.js"></script>
+  <script src="paste-parser.js"></script>
   <script src="panel.js"></script>
 </body>
 </html>

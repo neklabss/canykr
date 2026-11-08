@@ -299,6 +299,50 @@ test('alanları geç yüklenen sayfa yoklanır ve doldurulur', async () => {
   await page.close();
 });
 
+test('yapıştırma: etiketli metin alanlara dağıtılır, ham metin silinir, aktarım çalışır', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=normal');
+  await openPanel(tabId);
+  await panel.fill('#paste-text', `Merhaba,\nAdı Soyadı: ${DATA.ad} ${DATA.soyad}\nTC Kimlik No: ${DATA.tckn}\nDoğum Tarihi: 02.03.${DATA.dogumYili}`);
+  await panel.click('#paste-btn');
+  await waitStatus(/4 alan dolduruldu/);
+  assert.equal(await panel.inputValue('#paste-text'), '', 'ham metin panelde kalmaz');
+  assert.equal(await panel.inputValue('#tckn'), DATA.tckn);
+  assert.equal(await panel.inputValue('#ad'), DATA.ad);
+  assert.equal(await panel.inputValue('#soyad'), DATA.soyad);
+  assert.equal(await panel.inputValue('#dogumYili'), DATA.dogumYili);
+  assert.equal(await panel.locator('input.guessed').count(), 0);
+  assert.equal((await pageValues(page)).values.txtTc, '', 'yapıştırma tek başına NVI formuna yazmaz');
+  await panel.click('#fill-btn');
+  await waitStatus(/aktarıldı/);
+  assert.equal((await pageValues(page)).values.txtTc, DATA.tckn);
+  await page.close();
+});
+
+test('yapıştırma: etiketsiz metinde tahmin edilen alanlar işaretlenir; düzeltince işaret kalkar', async () => {
+  await openPanel(0);
+  await panel.fill('#paste-text', `${DATA.ad} ${DATA.soyad}\n${DATA.tckn}`);
+  await panel.press('#paste-text', 'Control+Enter');
+  const status = await waitStatus(/alan dolduruldu/);
+  assert.match(status, /Tahmin edilen alanları kontrol edin: T\.C\. Kimlik No, Ad, Soyad/);
+  assert.match(status, /Eksik: Doğum Yılı/);
+  assert.equal(await panel.locator('input.guessed').count(), 3);
+  assert.equal(await panel.evaluate(() => document.activeElement.id), 'dogumYili', 'odak eksik alana gider');
+  await panel.fill('#ad', 'DÜZELTİLDİ');
+  assert.equal(await panel.locator('input.guessed').count(), 2);
+  await panel.click('#clear-btn');
+  assert.equal(await panel.locator('input.guessed').count(), 0);
+});
+
+test('yapıştırma: iki geçerli T.C. varsa numara doldurulmaz ve uyarılır', async () => {
+  await openPanel(0);
+  const { makeTckn: mk } = require('./helpers.cjs');
+  await panel.fill('#paste-text', `Ad: Ali\n${mk('111111111')} ${mk('222222222')}`);
+  await panel.click('#paste-btn');
+  await waitStatus(/birden fazla geçerli T\.C\. Kimlik No/);
+  assert.equal(await panel.inputValue('#tckn'), '');
+  assert.equal(await panel.inputValue('#ad'), 'Ali');
+});
+
 test('sekme kapalıysa hata', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=normal');
   await page.close();
