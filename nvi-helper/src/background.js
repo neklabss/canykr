@@ -8,11 +8,8 @@
  *
  * Kişisel veriler hiçbir koşulda loglanmaz. Form gönderilmez, CAPTCHA'ya dokunulmaz.
  */
-importScripts('validation.js', 'session-store.js');
+importScripts('validation.js', 'session-store.js', 'nvi-url.js');
 
-const NVI_HOST = 'tckimlik.nvi.gov.tr';
-// CANLI ORTAMDA DOĞRULANMADI: topluluk kaynaklarındaki modül yolu.
-const NVI_MODULE_PATH = '/modul/tckimliknodogrula';
 const FIELD_WAIT_MS = 8000;
 const SWEEP_ALARM = 'nvi-sweep';
 const PANEL_URL = chrome.runtime.getURL('src/panel.html');
@@ -23,14 +20,7 @@ const inFlight = new Set();
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }).catch(() => {});
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
-function classifyUrl(url) {
-  if (!url) return 'not_nvi_page';
-  let u;
-  try { u = new URL(url); } catch (e) { return 'not_nvi_page'; }
-  if (u.protocol !== 'https:' || u.hostname !== NVI_HOST) return 'not_nvi_page';
-  if (!u.pathname.toLowerCase().startsWith(NVI_MODULE_PATH)) return 'wrong_module';
-  return 'ok';
-}
+const classifyUrl = NviUrl.classifyUrl;
 
 function withTimeout(promise, ms) {
   let timer;

@@ -343,6 +343,26 @@ test('yapıştırma: iki geçerli T.C. varsa numara doldurulmaz ve uyarılır', 
   assert.equal(await panel.inputValue('#ad'), 'Ali');
 });
 
+test('panel etkin sekmenin NVI formu olup olmadığını gösterir ve değişince günceller', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=normal');
+  await openPanel(tabId);
+  await panel.waitForSelector('#target[data-state="ok"]');
+  assert.match(await panel.innerText('#target'), /NVI T\.C\. Kimlik No Doğrulama sayfası/);
+  // Aynı sekme başka adrese gidince gösterge güncellenir.
+  await page.goto(OTHER);
+  await panel.waitForSelector('#target[data-state="not_nvi_page"]');
+  await page.goto('https://tckimlik.nvi.gov.tr/Modul/BaskaBirModul');
+  await panel.waitForSelector('#target[data-state="wrong_module"]');
+  await page.close();
+  await panel.waitForSelector('#target[data-state="unknown"]');
+});
+
+test('simgeye tıklama yan paneli açar; panel komutu kayıtlı', async () => {
+  assert.deepEqual(await sw().evaluate(() => chrome.sidePanel.getPanelBehavior()), { openPanelOnActionClick: true });
+  const cmds = await panel.evaluate(() => chrome.commands.getAll());
+  assert.ok(cmds.some((c) => c.name === '_execute_action'), 'panel açma komutu kayıtlı');
+});
+
 test('sekme kapalıysa hata', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=normal');
   await page.close();
