@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "NVI Form Yardımcısı",
+  "version": "0.2.0",
+  "description": "Müşteri bilgilerini NVI T.C. Kimlik No Doğrulama formuna aktarır. Yalnızca doldurur; güvenlik kodu ve sorgu görevliye aittir.",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "scripting", "sidePanel", "alarms"],
+  "host_permissions": ["https://tckimlik.nvi.gov.tr/*"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "side_panel": {
+    "default_path": "src/panel.html"
+  },
+  "action": {
+    "default_title": "NVI Form Yardımcısı"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NVI Yardımcısı — Yerel Demo (Simülasyon)</title>
+  <link rel="stylesheet" href="../src/panel.css">
+  <style>
+    body { padding: 0; }
+    .banner { background: #fff3cd; color: #3d2c00; border-bottom: 2px dashed #9a6700; padding: 10px 16px; font-weight: 700; }
+    .layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; padding: 16px; }
+    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+    iframe { width: 100%; min-height: 460px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+    select { font: inherit; padding: 6px; width: 100%; margin-bottom: 12px; }
+    pre { white-space: pre-wrap; font-size: .8rem; }
+  </style>
+</head>
+<body>
+  <div class="banner" role="note">SİMÜLASYON — Bu demo gerçek NVI sayfasına bağlanmaz. Sağdaki form tahmini bir yapıdır; sonuçlar kimlik doğrulaması değildir. Gerçek kişi bilgisi girmeyin.</div>
+  <div class="layout">
+    <main>
+      <h1>Panel (demo)</h1>
+      <label for="scenario">Senaryo</label>
+      <select id="scenario">
+        <option value="normal">Normal form</option>
+        <option value="prefilled">Ad alanı önceden dolu (korunmalı)</option>
+        <option value="ambiguous">İki "Soyad" alanı (belirsiz → atlanmalı)</option>
+        <option value="late">Alanlar 1,2 sn sonra yükleniyor</option>
+        <option value="never">Alanlar hiç gelmiyor (zaman aşımı)</option>
+        <option value="vkeyboard">Sanal klavye açık (readonly)</option>
+        <option value="disabled">Soyad alanı devre dışı</option>
+        <option value="rejecting">Sayfa yıl değerini reddediyor</option>
+        <option value="idonly">Etiketsiz, yalnızca id ile alanlar</option>
+        <option value="noform">Form yok</option>
+      </select>
+
+      <div id="error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
+        <h2>Lütfen şu alanları düzeltin</h2>
+        <ul id="error-list"></ul>
+      </div>
+      <form id="fill-form" novalidate autocomplete="off">
+        <div class="field"><label for="tckn">T.C. Kimlik No</label><input id="tckn" inputmode="numeric" maxlength="11" aria-describedby="tckn-error"><p class="field-error" id="tckn-error" hidden></p></div>
+        <div class="field"><label for="ad">Ad</label><input id="ad" maxlength="50" aria-describedby="ad-error"><p class="field-error" id="ad-error" hidden></p></div>
+        <div class="field"><label for="soyad">Soyad</label><input id="soyad" maxlength="50" aria-describedby="soyad-error"><p class="field-error" id="soyad-error" hidden></p></div>
+        <div class="field"><label for="dogumYili">Doğum Yılı</label><input id="dogumYili" inputmode="numeric" maxlength="4" aria-describedby="dogumYili-error"><p class="field-error" id="dogumYili-error" hidden></p></div>
+        <div class="actions">
+          <button type="submit" id="fill-btn">Simülasyon formuna aktar</button>
+          <button type="button" id="sample-btn" class="secondary">Sentetik örnek veri</button>
+        </div>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <ul id="field-results" class="field-results" aria-label="Alan sonuçları"></ul>
+      <details><summary>Ham sonuç (kişisel veri içermez)</summary><pre id="raw"></pre></details>
+    </main>
+    <section aria-label="Simüle edilmiş NVI formu">
+      <iframe id="target" title="Simüle edilmiş NVI formu" src="../test/fixtures/nvi-like.html?scenario=normal"></iframe>
+    </section>
+  </div>
+  <script src="../src/validation.js"></script>
+  <script src="../src/filler.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>

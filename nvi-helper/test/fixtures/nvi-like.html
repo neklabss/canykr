@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>SİMÜLASYON — NVI benzeri test formu</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 16px; }
+    .sim { background: #fff3cd; border: 2px dashed #9a6700; padding: 8px; margin-bottom: 12px; font-weight: 700; }
+    .row { margin: 8px 0; }
+    label { display: inline-block; min-width: 130px; }
+    .keypad { display: none; gap: 4px; margin: 8px 0; }
+    .keypad.on { display: flex; }
+    .captcha { display: inline-block; width: 120px; height: 36px; background: repeating-linear-gradient(45deg,#ccc,#ccc 6px,#eee 6px,#eee 12px); vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <div class="sim" role="note">SİMÜLASYON: Bu sayfa gerçek NVI sayfası değildir. Alan yapısı tahminidir ve canlı DOM ile doğrulanmamıştır.</div>
+  <div id="host"></div>
+  <script>
+  (function () {
+    // Senaryo: ?scenario=normal|prefilled|ambiguous|late|never|vkeyboard|disabled|noform|rejecting|idonly
+    var scenario = new URLSearchParams(location.search).get('scenario') || 'normal';
+    window.__submitted = 0;
+    window.__events = [];
+
+    function row(id, label, extra) {
+      return '<div class="row"><label for="' + id + '">' + label + '</label>' +
+        '<input type="text" id="' + id + '" name="' + id + '" ' + (extra || '') + '></div>';
+    }
+
+    function formHtml() {
+      var h = '<form id="dogrulaForm" action="javascript:void 0">';
+      if (scenario === 'idonly') {
+        // Etiketsiz, yalnızca id/name ile tanımlanan alanlar.
+        h += '<input type="text" id="TCKimlikNo" maxlength="11"><input type="text" id="Ad"><input type="text" id="Soyad"><input type="text" id="DogumYili" maxlength="4">';
+      } else {
+        h += row('txtTc', 'T.C. Kimlik No', 'maxlength="11"');
+        h += row('txtAd', 'Ad', scenario === 'prefilled' ? 'value="ÖNCEDEN"' : '');
+        h += row('txtSoyad', 'Soyad', scenario === 'disabled' ? 'disabled' : '');
+        if (scenario === 'ambiguous') h += row('txtSoyad2', 'Soyad');
+        h += row('txtYil', 'Doğum Yılı', 'maxlength="4"');
+        h += row('txtAnneAdi', 'Anne Adı');
+      }
+      h += '<div class="row"><label for="chkSanal">Sanal klavye kullan</label><input type="checkbox" id="chkSanal"' + (scenario === 'vkeyboard' ? ' checked' : '') + '></div>';
+      h += '<div class="keypad" id="keypad"><button type="button">1</button><button type="button">2</button><button type="button">3</button></div>';
+      h += '<div class="row"><span class="captcha" aria-hidden="true"></span> <label for="txtGuvenlik">Güvenlik Kodu</label><input type="text" id="txtGuvenlik" name="CaptchaCode"></div>';
+      h += '<input type="hidden" name="__RequestVerificationToken" value="sim">';
+      h += '<button type="submit" id="btnSorgula">Sorgula</button></form>';
+      return h;
+    }
+
+    function applyVirtualKeyboard() {
+      var on = document.getElementById('chkSanal').checked;
+      document.getElementById('keypad').classList.toggle('on', on);
+      document.querySelectorAll('#dogrulaForm input[type=text]').forEach(function (el) {
+        if (el.id !== 'txtGuvenlik') el.readOnly = on;
+      });
+    }
+
+    function mount() {
+      document.getElementById('host').innerHTML = formHtml();
+      var f = document.getElementById('dogrulaForm');
+      f.addEventListener('submit', function (e) { e.preventDefault(); window.__submitted++; });
+      document.getElementById('btnSorgula').addEventListener('click', function () { window.__submitted++; });
+      f.addEventListener('input', function (e) { window.__events.push('input:' + e.target.id); });
+      f.addEventListener('change', function (e) { window.__events.push('change:' + e.target.id); });
+      document.getElementById('chkSanal').addEventListener('change', applyVirtualKeyboard);
+      applyVirtualKeyboard();
+      if (scenario === 'rejecting') {
+        // Sayfa betiği değeri kabul etmiyor (ör. maskeleme) — doldurma "rejected" dönmeli.
+        document.getElementById('txtYil').addEventListener('input', function (e) { e.target.value = ''; });
+      }
+    }
+
+    if (scenario === 'noform') return;
+    if (scenario === 'never') { document.getElementById('host').textContent = 'Yükleniyor…'; return; }
+    if (scenario === 'late') { setTimeout(mount, 1200); return; }
+    mount();
+  })();
+  </script>
+</body>
+</html>
