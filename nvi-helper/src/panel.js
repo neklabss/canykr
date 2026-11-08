@@ -35,6 +35,7 @@
     timeout: 'Sayfa zamanında yanıt vermedi. Sayfayı yenileyip tekrar deneyin.',
     injection_failed: 'Sayfaya bağlanılamadı. Sayfayı yenileyip tekrar deneyin.',
     busy: 'Bu sekmede zaten bir aktarım sürüyor.',
+    multiple_forms: 'Sayfada birden fazla uygun form var; güvenlik için hiçbiri doldurulmadı. Alanları elle girin.',
     invalid: 'Bilgilerde hata var.',
     expired: 'Sayfa yüklenmeden bekleme süresi doldu; veri silindi. Tekrar deneyin.',
     internal: 'Beklenmeyen bir hata oluştu.'

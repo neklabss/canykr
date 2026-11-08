@@ -243,6 +243,62 @@ test('alanlar hiç gelmezse zaman aşımı mesajı', async () => {
   await page.close();
 });
 
+async function frameValues(page) {
+  const out = [];
+  for (const f of page.frames()) {
+    if (f === page.mainFrame() || !f.url().includes('tckimlik.nvi.gov.tr')) continue;
+    await f.waitForSelector('#txtTc');
+    out.push(await f.evaluate(() => ({
+      tc: document.getElementById('txtTc').value,
+      captcha: document.getElementById('txtGuvenlik').value,
+      submitted: window.__submitted
+    })));
+  }
+  return out;
+}
+
+test('form iframe içindeyse doğru çerçeve bulunur ve doldurulur', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=iframe');
+  await openPanel(tabId);
+  await typeData();
+  await panel.click('#fill-btn');
+  await waitStatus(/aktarıldı/);
+  assert.deepEqual(await frameValues(page), [{ tc: DATA.tckn, captcha: '', submitted: 0 }]);
+  await page.close();
+});
+
+test('NVI dışı bir iframe (izin yok) aktarımı bozmaz', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=iframe-foreign');
+  await openPanel(tabId);
+  await typeData();
+  await panel.click('#fill-btn');
+  await waitStatus(/aktarıldı/);
+  assert.deepEqual(await frameValues(page), [{ tc: DATA.tckn, captcha: '', submitted: 0 }]);
+  await page.close();
+});
+
+test('iki ayrı çerçevede form varsa hiçbiri doldurulmaz', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=twoframes');
+  await openPanel(tabId);
+  await typeData();
+  await panel.click('#fill-btn');
+  await waitStatus(/birden fazla uygun form/);
+  const vals = await frameValues(page);
+  assert.equal(vals.length, 2);
+  assert.ok(vals.every((v) => v.tc === ''), 'hiçbir çerçeveye yazılmadı');
+  await page.close();
+});
+
+test('alanları geç yüklenen sayfa yoklanır ve doldurulur', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=late');
+  await openPanel(tabId);
+  await typeData();
+  await panel.click('#fill-btn');
+  await waitStatus(/aktarıldı/);
+  assert.equal((await pageValues(page)).values.txtTc, DATA.tckn);
+  await page.close();
+});
+
 test('sekme kapalıysa hata', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=normal');
   await page.close();

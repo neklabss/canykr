@@ -18,7 +18,7 @@
   <div id="host"></div>
   <script>
   (function () {
-    // Senaryo: ?scenario=normal|prefilled|ambiguous|late|never|vkeyboard|disabled|noform|rejecting|idonly
+    // Senaryo: ?scenario=normal|prefilled|ambiguous|late|never|vkeyboard|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
     var scenario = new URLSearchParams(location.search).get('scenario') || 'normal';
     window.__submitted = 0;
     window.__events = [];
@@ -73,6 +73,16 @@
     }
 
     if (scenario === 'noform') return;
+    if (scenario === 'iframe' || scenario === 'twoframes' || scenario === 'iframe-foreign') {
+      // Form bir iframe içinde (aynı host). twoframes: iki ayrı form → belirsiz.
+      // iframe-foreign: ek olarak NVI dışı bir iframe (eklentinin izni yok).
+      var frame = function (src) { return '<iframe src="' + src + '" title="Form çerçevesi" style="width:100%;height:330px;border:1px solid #999"></iframe>'; };
+      var html = frame('?scenario=normal');
+      if (scenario === 'twoframes') html += frame('?scenario=normal&ikinci=1');
+      if (scenario === 'iframe-foreign') html = frame('https://example.invalid/reklam') + html;
+      document.getElementById('host').innerHTML = html;
+      return;
+    }
     if (scenario === 'never') { document.getElementById('host').textContent = 'Yükleniyor…'; return; }
     if (scenario === 'late') { setTimeout(mount, 1200); return; }
     mount();
