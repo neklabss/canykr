@@ -1,13 +1,14 @@
 {
   "name": "nvi-helper",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "NVI T.C. Kimlik No Doğrulama formu için doldurma yardımcısı (Chrome/Edge MV3)",
   "scripts": {
-    "test": "node --test test/validation.test.cjs test/session-store.test.cjs test/filler.browser.test.cjs test/check-dom.test.cjs test/extension.e2e.test.cjs",
-    "test:unit": "node --test test/validation.test.cjs test/session-store.test.cjs",
+    "test": "node --test test/validation.test.cjs test/session-store.test.cjs test/paste-parser.test.cjs test/pack.test.cjs test/filler.browser.test.cjs test/check-dom.test.cjs test/extension.e2e.test.cjs",
+    "test:unit": "node --test test/validation.test.cjs test/session-store.test.cjs test/paste-parser.test.cjs test/pack.test.cjs",
     "test:browser": "node --test test/filler.browser.test.cjs test/check-dom.test.cjs test/extension.e2e.test.cjs",
     "demo": "node scripts/serve.cjs",
-    "check-dom": "node scripts/check-dom.cjs"
+    "check-dom": "node scripts/check-dom.cjs",
+    "pack": "node scripts/pack.cjs"
   }
 }
