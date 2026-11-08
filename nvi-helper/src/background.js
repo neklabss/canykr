@@ -14,7 +14,6 @@ const NVI_HOST = 'tckimlik.nvi.gov.tr';
 // CANLI ORTAMDA DOĞRULANMADI: topluluk kaynaklarındaki modül yolu.
 const NVI_MODULE_PATH = '/modul/tckimliknodogrula';
 const FIELD_WAIT_MS = 8000;
-const INJECT_TIMEOUT_MS = FIELD_WAIT_MS + 4000;
 const SWEEP_ALARM = 'nvi-sweep';
 const PANEL_URL = chrome.runtime.getURL('src/panel.html');
 
@@ -49,18 +48,53 @@ function errorCode(err) {
   return 'injection_failed';
 }
 
+const PROBE_INTERVAL_MS = 400;
+const CALL_TIMEOUT_MS = 4000;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Formu taşıyan çerçeveyi bulur. Tüm erişilebilir çerçevelere (ana sayfa ve
+// NVI host'undaki iframe'ler) filler.js enjekte edilir, değer göndermeden
+// yalnızca alan sayıları sorulur. Alanlar geç yüklenirse süre dolana kadar yoklanır.
+async function locateFrame(tabId) {
+  const deadline = Date.now() + FIELD_WAIT_MS;
+  for (;;) {
+    const target = { tabId, allFrames: true };
+    await withTimeout(chrome.scripting.executeScript({ target, files: ['src/filler.js'] }), CALL_TIMEOUT_MS);
+    const results = await withTimeout(
+      chrome.scripting.executeScript({ target, func: () => globalThis.NviFiller.probe() }),
+      CALL_TIMEOUT_MS
+    );
+    const withFields = results.filter((r) => r.result && r.result.found + r.result.ambiguous > 0);
+    const complete = withFields.filter((r) => r.result.missing === 0);
+    const timedOut = Date.now() >= deadline;
+    if (complete.length === 1 && withFields.length === 1) return { frameId: complete[0].frameId, timedOut: false };
+    if (withFields.length > 1 && (complete.length > 1 || timedOut)) return { error: 'multiple_forms' };
+    if (timedOut) {
+      // Kısmi form tek çerçevedeyse orada doldur (eksikler "missing" döner);
+      // hiç yoksa ana çerçevede doldurmayı dene ki alan bazında sonuç oluşsun.
+      return { frameId: withFields.length === 1 ? withFields[0].frameId : 0, timedOut: true };
+    }
+    await sleep(PROBE_INTERVAL_MS);
+  }
+}
+
 async function runFill(tabId, data) {
-  await chrome.scripting.executeScript({ target: { tabId }, files: ['src/filler.js'] });
+  const located = await withTimeout(locateFrame(tabId), FIELD_WAIT_MS + CALL_TIMEOUT_MS * 2);
+  if (located.error) return { error: located.error };
   const [injection] = await withTimeout(
     chrome.scripting.executeScript({
-      target: { tabId },
-      func: (d, wait) => globalThis.NviFiller.fill(d, { timeoutMs: wait }),
-      args: [data, FIELD_WAIT_MS]
+      target: { tabId, frameIds: [located.frameId] },
+      func: (d) => globalThis.NviFiller.fill(d, { timeoutMs: 0 }),
+      args: [data]
     }),
-    INJECT_TIMEOUT_MS
+    CALL_TIMEOUT_MS
   );
   if (!injection || !injection.result) throw new Error('empty_result');
-  return injection.result;
+  const result = injection.result;
+  result.timedOut = located.timedOut && Object.values(result.fields).some((f) => f.status === 'missing');
+  result.inFrame = located.frameId !== 0;
+  return result;
 }
 
 async function fillNow(tabId, data) {
@@ -68,6 +102,7 @@ async function fillNow(tabId, data) {
   inFlight.add(tabId);
   try {
     const result = await runFill(tabId, data);
+    if (result.error) return { status: 'error', code: result.error };
     return { status: 'done', result };
   } catch (err) {
     return { status: 'error', code: errorCode(err) };

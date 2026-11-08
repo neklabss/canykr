@@ -1,0 +1,30 @@
+name: nvi-helper
+
+on:
+  pull_request:
+    paths: ['nvi-helper/**', '.github/workflows/nvi-helper.yml']
+  push:
+    branches: [main]
+    paths: ['nvi-helper/**', '.github/workflows/nvi-helper.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: nvi-helper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Playwright (yalnızca test için, depoya eklenmez)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Testler
+        run: npm test

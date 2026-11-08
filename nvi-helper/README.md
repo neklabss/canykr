@@ -62,7 +62,11 @@ sekmeye enjekte eder → sonuç (yalnızca durum kodları, kişisel veri yok) pa
 - "güvenlik", "captcha", "kod", "şifre" gibi kelimeleri taşıyan alanlar hiçbir koşulda doldurulmaz.
 - Değer, sayfanın kendi `value` setter'ı ile yazılır, `input` ve `change` olayları tetiklenir;
   sonra değerin gerçekten kaldığı kontrol edilir (kalmadıysa `rejected`).
-- Alanlar geç yüklenirse `MutationObserver` ile 8 saniyeye kadar beklenir.
+- Alanlar geç yüklenirse 8 saniyeye kadar beklenir (service worker sayfayı ~400 ms aralıkla yoklar).
+- **iframe:** Ana sayfa ve NVI host'undaki tüm iframe'ler önce değer gönderilmeden yoklanır
+  (`NviFiller.probe`, yalnızca alan sayıları döner). Formu tek bir çerçeve taşıyorsa yalnızca
+  o çerçeve doldurulur; birden fazla çerçevede form varsa **hiçbiri doldurulmaz**
+  (`multiple_forms`). İzin olmayan (NVI dışı) iframe'lere enjeksiyon yapılmaz.
 
 ## Gizlilik, izinler ve veri saklama
 
@@ -97,8 +101,11 @@ global olarak kuruluysa doğrudan çalışır, değilse `npm i -D playwright && 
 ```bash
 npm test             # hepsi
 npm run test:unit    # validation + session-store (tarayıcısız)
-npm run test:browser # filler + eklenti uçtan uca
+npm run test:browser # filler + check-dom + eklenti uçtan uca
 ```
+
+CI: `.github/workflows/nvi-helper.yml`, `nvi-helper/` değiştiğinde aynı testleri çalıştırır
+(Playwright yalnızca CI'da geçici kurulur, depoya bağımlılık eklenmez).
 
 - `test/validation.test.cjs` — kontrol basamakları, ad, yıl ve tarih kontrolleri.
   **Bunlar gerçek kimlik doğrulaması değildir.**
@@ -106,12 +113,18 @@ npm run test:browser # filler + eklenti uçtan uca
 - `test/filler.browser.test.cjs` — simülasyon formunda doldurma, değer koruma, belirsiz alan,
   geç yükleme, zaman aşımı, readonly/sanal klavye, disabled, reddedilen değer, CAPTCHA'ya ve
   gönder düğmesine dokunulmaması, sonuçta kişisel veri olmaması, demo sayfası.
+- `test/check-dom.test.cjs` — kaydedilmiş form HTML'ini raporlayan aracın testi.
 - `test/extension.e2e.test.cjs` — eklenti gerçek Chromium'a yüklenir; `tckimlik.nvi.gov.tr`
   istekleri yerel simülasyon sayfasına yönlendirilir (gerçek NVI'ye istek gitmez, dış ağ
   istekleri engellenir ve test bunu doğrular). Kapsam: panelden aktarım, panel doğrulaması ve
   hata özeti, NVI dışı sekme / yanlış modül, yüklenirken bekletme, sekme kapanınca ve başka
-  adrese gidince silme, iptal, **service worker kapatılıp yeniden başlatılınca bekleyen
+  adrese gidince silme, iptal, iframe içindeki form, NVI dışı iframe, iki çerçevede form
+  (doldurulmaz), geç yüklenen alanlar, **service worker kapatılıp yeniden başlatılınca bekleyen
   doldurmanın tamamlanması**, sanal klavye, zaman aşımı, kapalı sekme, erişilebilirlik temelleri.
+
+Erişilebilirlik: panel (normal ve hata durumu) ve demo, açık ve koyu temada axe-core 4.10
+(WCAG 2.1 A/AA + best-practice) ile tarandı; ihlal yok. axe-core depoya eklenmedi; tarama
+elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 
 ## Canlı ortamda henüz doğrulanmayanlar
 
@@ -124,25 +137,43 @@ npm run test:browser # filler + eklenti uçtan uca
    (ör. alanlar gizlenip yerine başka öğe konabilir).
 4. **Sayfanın kendi betikleri** `input`/`change` olaylarını farklı işleyebilir (maskeleme,
    blur doğrulaması). Değer kalmazsa `rejected` bildirilir ama gerçek davranış gözlenmedi.
-5. **iframe.** Form bir iframe içindeyse şu an yalnızca ana çerçeve taranır.
+5. **iframe.** Form NVI host'undaki bir iframe içindeyse desteklenir; başka bir alan adından
+   yüklenen iframe'deyse eklentinin izni olmadığı için doldurulamaz (bilerek).
 6. Ad/soyad için büyük harf veya Türkçe yerel ayar dönüşümü gerekip gerekmediği bilinmiyor;
    değerler yazıldığı gibi aktarılır.
 
 ### Canlı DOM nasıl incelenir (kişisel veri girmeden)
 
-Yetkili bir bilgisayarda NVI sayfasını açın, **hiçbir alana veri girmeden** geliştirici
-araçları konsolunda:
+Yetkili bir bilgisayarda NVI sayfasını açın. **Hiçbir alana veri girmeden** geliştirici
+araçları konsolunda aşağıdakini çalıştırın. Sayfanın bir kopyasını alır; kopyadaki değerleri,
+gizli alanları (ör. güvenlik belirteci), görselleri (CAPTCHA) ve betikleri temizler ve panoya
+kopyalar:
 
 ```js
-copy([...document.querySelectorAll('input,select,textarea,button,label')].map(e =>
-  [e.tagName, e.type, e.id, e.name, e.placeholder, e.getAttribute('aria-label'),
-   e.tagName === 'LABEL' ? e.textContent.trim() + ' → ' + e.htmlFor : '',
-   e.readOnly, e.disabled, e.maxLength].join(' | ')).join('\n'))
+(() => {
+  const root = document.body.cloneNode(true);
+  root.querySelectorAll('script, noscript, iframe').forEach((e) => e.remove());
+  root.querySelectorAll('img').forEach((e) => e.removeAttribute('src'));
+  root.querySelectorAll('input, textarea').forEach((e) => {
+    if (e.type === 'hidden') e.setAttribute('value', '');
+    else if (!['checkbox', 'radio'].includes(e.type)) e.removeAttribute('value');
+  });
+  copy('<!doctype html><html lang="tr"><meta charset="utf-8"><body>' + root.innerHTML + '</body></html>');
+})();
 ```
 
-Çıktıyı (yalnızca yapı, değer yok) paylaşın; ardından sanal klavye seçeneğini işaretleyip
-aynı komutu tekrar çalıştırın. `FIELD_RULES` buna göre güncellenip simülasyon formu gerçek
-yapıya yaklaştırılacak.
+Panodaki içeriği `nvi-bos-form.html` olarak kaydedin. Sanal klavye seçeneğini işaretleyip aynı
+komutla `nvi-sanal-klavye.html` dosyasını da kaydedin. Form bir iframe içindeyse konsolun üst
+kısmındaki bağlam seçiciden o çerçeveyi seçip tekrar çalıştırın. Sonra:
+
+```bash
+npm run check-dom -- nvi-bos-form.html
+```
+
+Araç sayfa betiklerini çalıştırmadan ve ağa çıkmadan her alanın hangi input'a eşlendiğini,
+eşleşmeyen alanları ve readonly/maxlength bilgisini yazar; dört alan da eşleşirse 0 ile çıkar.
+Dosyalarda değer varsa uyarır. Bu dosyalar kişisel veri içermese de depoya **eklenmemelidir**;
+paylaşılırsa `FIELD_RULES` ve simülasyon formu gerçek yapıya göre güncellenir.
 
 ## Henüz yapılmayanlar / kapsam dışı
 

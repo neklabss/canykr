@@ -15,7 +15,7 @@
  */
 (function (root) {
   'use strict';
-  if (root.NviFiller && root.NviFiller.version) return;
+  if (root.NviFiller && root.NviFiller.version >= 2) return;
 
   const TR_MAP = { 'ı': 'i', 'İ': 'i', 'ş': 's', 'Ş': 's', 'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c' };
 
@@ -218,7 +218,20 @@
     };
   }
 
-  const api = { version: 1, fill, resolveFields, norm, FIELD_RULES, FORBIDDEN };
+  // Doldurmadan, bu çerçevede kaç alanın bulunduğunu söyler (değer içermez).
+  // Service worker bunu tüm çerçevelerde çağırıp formu hangi çerçevenin taşıdığını seçer.
+  function probe(opts) {
+    const doc = (opts && opts.document) || root.document;
+    const resolved = resolveFields(doc);
+    const counts = { found: 0, ambiguous: 0, missing: 0 };
+    for (const r of Object.values(resolved)) {
+      if (r.el) counts.found += 1;
+      else counts[r.status] += 1;
+    }
+    return counts;
+  }
+
+  const api = { version: 2, fill, probe, resolveFields, norm, FIELD_RULES, FORBIDDEN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NviFiller = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
