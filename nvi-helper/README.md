@@ -23,7 +23,10 @@ Güvenlik kodunu girip **Sorgula**'ya basmak ve sonucu NVI sayfasından okumak g
 
 1. `chrome://extensions` (Edge: `edge://extensions`) → **Geliştirici modu** açık.
 2. **Paketlenmemiş öğe yükle** → bu `nvi-helper/` klasörünü seçin.
-3. Araç çubuğundaki simgeye tıklayınca yan panel açılır.
+3. Araç çubuğundaki simgeye tıklayınca yan panel açılır. Önerilen kısayol **Alt+Shift+N**'dir;
+   tarayıcı başka bir eklentiyle çakışma nedeniyle atamazsa `chrome://extensions/shortcuts`
+   (Edge: `edge://extensions/shortcuts`) sayfasından elle atanabilir. (Kısayolun gerçek
+   tarayıcıda atandığı doğrulanmadı; otomatik test tarayıcısı önerilen tuşu atamıyor.)
 
 Başka bilgisayarlara dağıtmak için `npm run pack` yalnızca çalışma dosyalarını (manifest ve
 `src/`) içeren `dist/nvi-helper-<sürüm>.zip` üretir; demo ve testler pakete girmez. Zip açılıp
@@ -32,7 +35,9 @@ politikası veya mağaza) için ayrıca imzalı paket ve barındırma kararı ge
 
 ## Kullanım
 
-1. NVI'de T.C. Kimlik No Doğrulama sayfasını açın.
+1. NVI'de T.C. Kimlik No Doğrulama sayfasını açın. Panelin üstündeki gösterge etkin sekmenin
+   doğru sayfa olup olmadığını söyler (yalnızca bilgi amaçlıdır; asıl kontrol aktarım anında
+   service worker'da yapılır).
 2. Yan panelde dört alanı doldurun **ya da** müşteri bilgisini (mesaj, e-posta, tablo satırı)
    **Yapıştırarak doldur** kutusuna yapıştırıp **Alanlara dağıt**'a (veya Ctrl+Enter) basın.
    Etiketsiz metinden tahmin edilen alanlar kesikli çerçeveyle işaretlenir; kontrol edin.
@@ -51,6 +56,7 @@ src/panel.html|js|css   Yan panel (erişilebilir form, hata özeti, canlı durum
 src/background.js       Service worker: yeniden doğrulama, URL kontrolü, enjeksiyon, bekleyen kayıtlar
 src/filler.js           Alan eşleştirme ve doldurma (sayfaya istek anında enjekte edilir)
 src/validation.js       Biçim kontrolleri (kontrol basamağı, ad, yıl, tarih)
+src/nvi-url.js          NVI adres sınıflandırması (service worker ve panel göstergesi)
 src/paste-parser.js     Yapıştırılan serbest metinden alan ayrıştırma (yalnızca panelde)
 src/session-store.js    Sekmeye bağlı, TTL'li bekleyen kayıtlar (chrome.storage.session)
 demo/                   Yerel demo (SİMÜLASYON)
@@ -133,6 +139,8 @@ CI: `.github/workflows/nvi-helper.yml`, `nvi-helper/` değiştiğinde aynı test
 - `test/validation.test.cjs` — kontrol basamakları, ad, yıl ve tarih kontrolleri.
   **Bunlar gerçek kimlik doğrulaması değildir.**
 - `test/session-store.test.cjs` — TTL, tek kullanımlık okuma, sekme yalıtımı, temizlik.
+- `test/nvi-url.test.cjs` — adres sınıflandırması; `tckimlik.nvi.gov.tr.example.com` gibi
+  benzer görünen adreslerin reddi.
 - `test/paste-parser.test.cjs` — etiketli satırlar, tablo satırı, etiketsiz tahmin, telefon gibi
   kontrol basamağı tutmayan sayıların reddi, birden fazla aday olduğunda alanı boş bırakma.
 - `test/pack.test.cjs` — paket içeriği, manifest/panel başvurularının pakette olması, zip'in
@@ -146,7 +154,7 @@ CI: `.github/workflows/nvi-helper.yml`, `nvi-helper/` değiştiğinde aynı test
   istekleri engellenir ve test bunu doğrular). Kapsam: panelden aktarım, panel doğrulaması ve
   hata özeti, NVI dışı sekme / yanlış modül, yüklenirken bekletme, sekme kapanınca ve başka
   adrese gidince silme, iptal, iframe içindeki form, NVI dışı iframe, iki çerçevede form
-  (doldurulmaz), geç yüklenen alanlar, yapıştırarak doldurma, **service worker kapatılıp yeniden başlatılınca bekleyen
+  (doldurulmaz), geç yüklenen alanlar, yapıştırarak doldurma, etkin sekme göstergesi, **service worker kapatılıp yeniden başlatılınca bekleyen
   doldurmanın tamamlanması**, sanal klavye, zaman aşımı, kapalı sekme, erişilebilirlik temelleri.
 
 Erişilebilirlik: panel (normal ve hata durumu) ve demo, açık ve koyu temada axe-core 4.10
@@ -158,7 +166,7 @@ elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 1. **Gerçek DOM ve seçiciler.** Canlı sayfa bu ortamdan erişilemedi. Alan adları kamuya açık
    kaynaklardan (NVI SOAP servisi: `TCKimlikNo`, `Ad`, `Soyad`, `DogumYili`) çıkarıldı;
    etiket metinleri tahmindir.
-2. **Modül yolu** `/Modul/TcKimlikNoDogrula` topluluk kaynaklarından alındı (`src/background.js`
+2. **Modül yolu** `/Modul/TcKimlikNoDogrula` topluluk kaynaklarından alındı (`src/nvi-url.js`
    içindeki `NVI_MODULE_PATH`). Yol farklıysa eklenti "Doğrulama modülü değil" der.
 3. **Sanal klavye davranışı.** Alanları readonly yaptığı varsayıldı; gerçekte farklı olabilir
    (ör. alanlar gizlenip yerine başka öğe konabilir).
@@ -209,4 +217,3 @@ paylaşılırsa `FIELD_RULES` ve simülasyon formu gerçek yapıya göre güncel
   içeren URL kullanılmayacak.
 - **Sonuç okuma ve panelde otomatik karar.** Önce gerçek yanıt biçimi ve izinli entegrasyon
   yolu doğrulanmalı. Doldurma başarısı hiçbir yerde kimlik doğrulama başarısı olarak kaydedilmez.
-- Simge dosyaları (varsayılan simge kullanılır).

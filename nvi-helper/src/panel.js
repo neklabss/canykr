@@ -202,6 +202,31 @@
     return tab ? tab.id : null;
   }
 
+  const TARGET_TEXT = {
+    ok: 'Etkin sekme: NVI T.C. Kimlik No Doğrulama sayfası.',
+    loading: 'Etkin sekme: NVI sayfası yükleniyor.',
+    wrong_module: 'Etkin sekme NVI\'de, ancak T.C. Kimlik No Doğrulama sayfası değil.',
+    not_nvi_page: 'Etkin sekme NVI sayfası değil; aktarım için NVI formunu açın.',
+    unknown: 'Etkin sekme belirlenemedi.'
+  };
+  const targetEl = document.getElementById('target');
+
+  // Yalnızca bilgilendirme: asıl kontrol service worker'da, aktarım anında yapılır.
+  async function refreshTarget() {
+    let state = 'unknown';
+    try {
+      const id = await targetTabId();
+      if (id !== null) {
+        const tab = await chrome.tabs.get(id);
+        const url = tab.status === 'complete' ? tab.url : (tab.pendingUrl || tab.url);
+        state = globalThis.NviUrl.classifyUrl(url);
+        if (state === 'ok' && tab.status !== 'complete') state = 'loading';
+      }
+    } catch (e) { state = 'unknown'; }
+    targetEl.dataset.state = state;
+    targetEl.textContent = TARGET_TEXT[state];
+  }
+
   function resetIdle() {
     if (idleTimer) clearTimeout(idleTimer);
     idleTimer = setTimeout(() => { clearInputs(); renderResults(null); setStatus('Panel boşta kaldığı için temizlendi.'); }, IDLE_CLEAR_MS);
@@ -258,6 +283,12 @@
     if (pendingTabId === null || msg.tabId !== pendingTabId) return;
     handleResponse(msg);
   });
+
+  chrome.tabs.onActivated.addListener(refreshTarget);
+  chrome.tabs.onUpdated.addListener((id, info) => { if (info.status || info.url) refreshTarget(); });
+  chrome.tabs.onRemoved.addListener(refreshTarget);
+  chrome.windows.onFocusChanged.addListener(refreshTarget);
+  refreshTarget();
 
   window.addEventListener('pagehide', clearInputs);
   resetIdle();

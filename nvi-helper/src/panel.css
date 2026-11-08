@@ -95,3 +95,10 @@ textarea {
 .paste { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 16px; }
 .paste .hint { margin-bottom: 8px; }
 input.guessed { border: 2px dashed var(--warn); }
+.target { margin: 0 0 14px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: .9rem; }
+.target::before { font-weight: 700; margin-right: 6px; }
+.target[data-state="ok"] { border-color: var(--ok); }
+.target[data-state="ok"]::before { content: "✓"; color: var(--ok); }
+.target[data-state="loading"]::before { content: "…"; }
+.target[data-state="not_nvi_page"], .target[data-state="wrong_module"] { border-color: var(--warn); }
+.target[data-state="not_nvi_page"]::before, .target[data-state="wrong_module"]::before { content: "!"; color: var(--warn); }
