@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NVI Form Yardımcısı</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <main>
+    <h1>NVI Form Yardımcısı</h1>
+    <p class="notice" id="notice">
+      Bu araç yalnızca formu <strong>doldurur</strong>. Kimlik doğrulaması yapmaz.
+      Güvenlik kodunu girip sorguyu siz başlatırsınız; sonucu NVI sayfasından okuyun.
+    </p>
+
+    <div id="error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
+      <h2>Lütfen şu alanları düzeltin</h2>
+      <ul id="error-list"></ul>
+    </div>
+
+    <form id="fill-form" novalidate autocomplete="off">
+      <div class="field">
+        <label for="tckn">T.C. Kimlik No</label>
+        <input id="tckn" name="tckn" inputmode="numeric" maxlength="11" autocomplete="off" spellcheck="false" aria-describedby="tckn-error" required>
+        <p class="field-error" id="tckn-error" hidden></p>
+      </div>
+      <div class="field">
+        <label for="ad">Ad</label>
+        <input id="ad" name="ad" maxlength="50" autocomplete="off" spellcheck="false" aria-describedby="ad-error" required>
+        <p class="field-error" id="ad-error" hidden></p>
+      </div>
+      <div class="field">
+        <label for="soyad">Soyad</label>
+        <input id="soyad" name="soyad" maxlength="50" autocomplete="off" spellcheck="false" aria-describedby="soyad-error" required>
+        <p class="field-error" id="soyad-error" hidden></p>
+      </div>
+      <div class="field">
+        <label for="dogumYili">Doğum Yılı</label>
+        <input id="dogumYili" name="dogumYili" inputmode="numeric" maxlength="4" autocomplete="off" aria-describedby="dogumYili-hint dogumYili-error" required>
+        <p class="hint" id="dogumYili-hint">4 haneli, ör. 1985</p>
+        <p class="field-error" id="dogumYili-error" hidden></p>
+      </div>
+
+      <div class="option">
+        <input type="checkbox" id="clear-after" checked>
+        <label for="clear-after">Aktarımdan sonra bu paneli temizle</label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="fill-btn">NVI formuna aktar</button>
+        <button type="button" id="clear-btn" class="secondary">Temizle</button>
+      </div>
+    </form>
+
+    <section aria-labelledby="status-heading">
+      <h2 id="status-heading" class="visually-hidden">Durum</h2>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <ul id="field-results" class="field-results" aria-label="Alan sonuçları"></ul>
+    </section>
+  </main>
+  <script src="validation.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>
