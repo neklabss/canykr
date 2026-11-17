@@ -1,0 +1,9 @@
+{
+  "name": "@backupjam/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single source of truth for BackUpJam design tokens (docs/06-design-system.md). Generates CSS custom properties and Dart constants.",
+  "files": ["tokens.json", "dist"],
+  "exports": { "./tokens.css": "./dist/tokens.css", "./tokens.json": "./tokens.json" },
+  "scripts": { "build": "node scripts/generate.mjs", "test": "node scripts/generate.mjs --check" }
+}

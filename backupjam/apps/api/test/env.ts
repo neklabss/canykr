@@ -1,0 +1,10 @@
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? 'postgres://backupjam:backupjam@localhost:5432/backupjam_test';
+process.env.JWT_ACCESS_SECRET = 'test-secret-test-secret-test-secret-test-secret';
+process.env.LOG_LEVEL = 'silent';
+process.env.PASSWORD_SCRYPT_LOG_N = '12';
+process.env.RATE_LIMIT_AUTH = '1000';
+process.env.RATE_LIMIT_DEFAULT = '10000';
+process.env.GOOGLE_CLIENT_IDS = 'test-google-client.apps.googleusercontent.com';
+process.env.APPLE_CLIENT_IDS = 'com.backupjam.app';
+process.env.APP_WEB_URL = 'http://localhost:3000';
