@@ -11,7 +11,7 @@
     <h1>NVI Form Yardımcısı</h1>
     <p class="notice" id="notice">
       Bu araç yalnızca formu <strong>doldurur</strong>. Kimlik doğrulaması yapmaz.
-      Güvenlik kodunu girip sorguyu siz başlatırsınız; sonucu NVI sayfasından okuyun.
+      "Ben robot değilim" kutusunu işaretleyip Doğrula düğmesine siz basarsınız; sonucu NVI sayfasından okuyun.
     </p>
 
     <p id="target" class="target" data-state="unknown">Etkin sekme kontrol ediliyor…</p>
@@ -46,10 +46,10 @@
         <p class="field-error" id="soyad-error" hidden></p>
       </div>
       <div class="field">
-        <label for="dogumYili">Doğum Yılı</label>
-        <input id="dogumYili" name="dogumYili" inputmode="numeric" maxlength="4" autocomplete="off" aria-describedby="dogumYili-hint dogumYili-error" required>
-        <p class="hint" id="dogumYili-hint">4 haneli, ör. 1985</p>
-        <p class="field-error" id="dogumYili-error" hidden></p>
+        <label for="dogumTarihi">Doğum Tarihi</label>
+        <input id="dogumTarihi" name="dogumTarihi" inputmode="numeric" maxlength="10" autocomplete="off" aria-describedby="dogumTarihi-hint dogumTarihi-error" required>
+        <p class="hint" id="dogumTarihi-hint">GG.AA.YYYY, ör. 05.03.1985. Yalnızca yıl da girilebilir; o zaman gün ve ayı NVI sayfasında elle girersiniz.</p>
+        <p class="field-error" id="dogumTarihi-error" hidden></p>
       </div>
 
       <div class="option">

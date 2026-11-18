@@ -38,12 +38,21 @@
     return d[9] === (((odd * 7 - even) % 10) + 10) % 10 && d[10] === d.slice(0, 10).reduce((a, b) => a + b, 0) % 10;
   }
 
-  function yearFrom(value, now) {
+  // Doğum bilgisini panel biçimine çevirir: geçerli tam tarih → "GG.AA.YYYY",
+  // yalnızca yıl → "YYYY". Geçersiz, gelecekteki veya 1900 öncesi değerler → null.
+  function birthFrom(value, now) {
     const s = String(value).trim();
-    const current = (now || new Date()).getFullYear();
-    let m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(s);
-    const y = m ? Number(m[3]) : (/^\d{4}$/.test(s) ? Number(s) : NaN);
-    return y >= 1900 && y <= current ? String(y) : null;
+    const n = now || new Date();
+    const m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(s);
+    if (m) {
+      const [d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])];
+      const dt = new Date(Date.UTC(y, mo - 1, d));
+      if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+      if (y < 1900 || dt.getTime() > Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())) return null;
+      return String(d).padStart(2, '0') + '.' + String(mo).padStart(2, '0') + '.' + y;
+    }
+    if (/^\d{4}$/.test(s) && Number(s) >= 1900 && Number(s) <= n.getFullYear()) return s;
+    return null;
   }
 
   function cleanName(s) {
@@ -73,9 +82,12 @@
         set(out, 'ad', parts.ad, h);
         set(out, 'soyad', parts.soyad, h);
       }
-    } else if (kind === 'dogumYili' || kind === 'dogumTarihi') {
-      const y = yearFrom(v, now);
-      if (y) set(out, 'dogumYili', y, how);
+    } else if (kind === 'dogumTarihi') {
+      const b = birthFrom(v, now);
+      if (b) set(out, 'dogumTarihi', b, how);
+    } else if (kind === 'dogumYili') {
+      const b = birthFrom(v, now);
+      if (b && b.length === 4) set(out, 'dogumTarihi', b, how);
     }
   }
 
@@ -114,14 +126,15 @@
       if (tcknCands.length === 1) set(out, 'tckn', tcknCands[0], 'guessed');
       else if (tcknCands.length > 1) out.warnings.push('multiple_tckn');
     }
-    if (out.fields.dogumYili === undefined) {
+    if (out.fields.dogumTarihi === undefined) {
+      // Önce tam tarihler; hiç yoksa tek başına duran 4 haneli yıllar.
       const dates = raw.match(/(?<!\d)\d{1,2}[./-]\d{1,2}[./-]\d{4}(?!\d)/g) || [];
-      const fromDates = [...new Set(dates.map((d) => yearFrom(d, now)).filter(Boolean))];
+      const fromDates = [...new Set(dates.map((d) => birthFrom(d, now)).filter(Boolean))];
       const bare = [...new Set((raw.replace(/(?<!\d)\d{1,2}[./-]\d{1,2}[./-]\d{4}(?!\d)/g, ' ').match(/(?<!\d)\d{4}(?!\d)/g) || [])
-        .map((y) => yearFrom(y, now)).filter(Boolean))];
-      const years = fromDates.length ? fromDates : bare;
-      if (years.length === 1) set(out, 'dogumYili', years[0], 'guessed');
-      else if (years.length > 1) out.warnings.push('multiple_years');
+        .map((y) => birthFrom(y, now)).filter(Boolean))];
+      const cands = fromDates.length ? fromDates : bare;
+      if (cands.length === 1) set(out, 'dogumTarihi', cands[0], 'guessed');
+      else if (cands.length > 1) out.warnings.push('multiple_years');
     }
     if (out.fields.ad === undefined && out.fields.soyad === undefined) {
       // Etiketsiz metinde, sayı ve etiket içermeyen ilk satırı ad soyad say.

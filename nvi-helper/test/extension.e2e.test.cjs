@@ -15,7 +15,7 @@ const EXT = path.resolve(__dirname, '..');
 const FIXTURE = fs.readFileSync(path.join(__dirname, 'fixtures/nvi-like.html'));
 const NVI = 'https://tckimlik.nvi.gov.tr/Modul/TcKimlikNoDogrula';
 const OTHER = 'https://example.invalid/';
-const DATA = { tckn: makeTckn('234567891'), ad: 'DENEME', soyad: 'KULLANICI', dogumYili: '1990' };
+const DATA = { tckn: makeTckn('234567891'), ad: 'DENEME', soyad: 'KULLANICI', dogumTarihi: '05.03.1990' };
 
 let ctx, extId, panel;
 // Yanıt gecikmesi (ms), URL'deki ?delay= ile ayarlanır: sekme "loading" durumunda kalır.
@@ -90,6 +90,7 @@ async function waitStatus(re, timeout = 15000) {
 async function pageValues(page) {
   return page.evaluate(() => ({
     values: Object.fromEntries([...document.querySelectorAll('input[type=text]')].map((i) => [i.id, i.value])),
+    robot: document.getElementById('chkRobot') ? document.getElementById('chkRobot').checked : null,
     submitted: window.__submitted
   }));
 }
@@ -104,10 +105,12 @@ test('yüklü NVI sayfası: panelden aktarım, form gönderilmez, veri saklanmaz
   const st = await pageValues(page);
   assert.equal(st.values.txtTc, DATA.tckn);
   assert.equal(st.values.txtSoyad, 'KULLANICI');
-  assert.equal(st.values.txtGuvenlik, '', 'CAPTCHA boş');
+  assert.deepEqual([st.values.txtGun, st.values.txtAy, st.values.txtYil], ['05', '03', '1990'], 'doğum tarihi üç alana bölünür');
+  assert.equal(st.values.txtCuzdanSeri, '', 'isteğe bağlı belge alanı boş');
+  assert.equal(st.robot, false, '"Ben robot değilim" kutusuna dokunulmaz');
   assert.equal(st.submitted, 0, 'sorgu otomatik başlatılmaz');
   assert.equal(await panel.inputValue('#tckn'), '', 'panel aktarımdan sonra temizlendi');
-  assert.equal(await panel.locator('#field-results li[data-status="filled"]').count(), 4);
+  assert.equal(await panel.locator('#field-results li[data-status="filled"]').count(), 6);
   assert.deepEqual(await sessionKeys(), [], 'session deposunda kayıt kalmaz');
   await page.close();
 });
@@ -115,11 +118,12 @@ test('yüklü NVI sayfası: panelden aktarım, form gönderilmez, veri saklanmaz
 test('panel doğrulaması: hatalı veride mesaj gönderilmez, erişilebilir hata özeti', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=normal');
   await openPanel(tabId);
-  await typeData({ ...DATA, tckn: DATA.tckn.slice(0, 10) + ((Number(DATA.tckn[10]) + 1) % 10), dogumYili: '19' });
+  await typeData({ ...DATA, tckn: DATA.tckn.slice(0, 10) + ((Number(DATA.tckn[10]) + 1) % 10), dogumTarihi: '31.02.1990' });
   await panel.click('#fill-btn');
   await waitStatus(/Bilgilerde hata var/);
   assert.equal(await panel.getAttribute('#tckn', 'aria-invalid'), 'true');
-  assert.equal(await panel.getAttribute('#dogumYili', 'aria-invalid'), 'true');
+  assert.equal(await panel.getAttribute('#dogumTarihi', 'aria-invalid'), 'true');
+  assert.match(await panel.innerText('#dogumTarihi-error'), /Takvimde böyle bir tarih yok/);
   assert.equal(await panel.getAttribute('#ad', 'aria-invalid'), null);
   assert.equal(await panel.isVisible('#error-summary'), true);
   assert.equal(await panel.evaluate(() => document.activeElement.id), 'error-summary', 'odak hata özetine taşınır');
@@ -227,7 +231,7 @@ test('sanal klavye açıkken readonly alanlar bildirilir, zorla doldurulmaz', as
   await panel.click('#fill-btn');
   const status = await waitStatus(/Sanal klavye/);
   assert.doesNotMatch(status, /aktarıldı\./);
-  assert.equal(await panel.locator('#field-results li[data-status="readonly"]').count(), 4);
+  assert.equal(await panel.locator('#field-results li[data-status="readonly"]').count(), 6);
   assert.equal(await panel.inputValue('#tckn'), DATA.tckn, 'başarısızlıkta panel verisi silinmez (elle giriş için)');
   assert.equal((await pageValues(page)).values.txtTc, '');
   await page.close();
@@ -239,7 +243,7 @@ test('alanlar hiç gelmezse zaman aşımı mesajı', async () => {
   await typeData();
   await panel.click('#fill-btn');
   await waitStatus(/belirlenen sürede/, 20000);
-  assert.equal(await panel.locator('#field-results li[data-status="missing"]').count(), 4);
+  assert.equal(await panel.locator('#field-results li[data-status="missing"]').count(), 6);
   await page.close();
 });
 
@@ -250,7 +254,7 @@ async function frameValues(page) {
     await f.waitForSelector('#txtTc');
     out.push(await f.evaluate(() => ({
       tc: document.getElementById('txtTc').value,
-      captcha: document.getElementById('txtGuvenlik').value,
+      robot: document.getElementById('chkRobot').checked,
       submitted: window.__submitted
     })));
   }
@@ -263,7 +267,7 @@ test('form iframe içindeyse doğru çerçeve bulunur ve doldurulur', async () =
   await typeData();
   await panel.click('#fill-btn');
   await waitStatus(/aktarıldı/);
-  assert.deepEqual(await frameValues(page), [{ tc: DATA.tckn, captcha: '', submitted: 0 }]);
+  assert.deepEqual(await frameValues(page), [{ tc: DATA.tckn, robot: false, submitted: 0 }]);
   await page.close();
 });
 
@@ -273,7 +277,7 @@ test('NVI dışı bir iframe (izin yok) aktarımı bozmaz', async () => {
   await typeData();
   await panel.click('#fill-btn');
   await waitStatus(/aktarıldı/);
-  assert.deepEqual(await frameValues(page), [{ tc: DATA.tckn, captcha: '', submitted: 0 }]);
+  assert.deepEqual(await frameValues(page), [{ tc: DATA.tckn, robot: false, submitted: 0 }]);
   await page.close();
 });
 
@@ -302,14 +306,14 @@ test('alanları geç yüklenen sayfa yoklanır ve doldurulur', async () => {
 test('yapıştırma: etiketli metin alanlara dağıtılır, ham metin silinir, aktarım çalışır', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=normal');
   await openPanel(tabId);
-  await panel.fill('#paste-text', `Merhaba,\nAdı Soyadı: ${DATA.ad} ${DATA.soyad}\nTC Kimlik No: ${DATA.tckn}\nDoğum Tarihi: 02.03.${DATA.dogumYili}`);
+  await panel.fill('#paste-text', `Merhaba,\nAdı Soyadı: ${DATA.ad} ${DATA.soyad}\nTC Kimlik No: ${DATA.tckn}\nDoğum Tarihi: 5.3.1990`);
   await panel.click('#paste-btn');
   await waitStatus(/4 alan dolduruldu/);
   assert.equal(await panel.inputValue('#paste-text'), '', 'ham metin panelde kalmaz');
   assert.equal(await panel.inputValue('#tckn'), DATA.tckn);
   assert.equal(await panel.inputValue('#ad'), DATA.ad);
   assert.equal(await panel.inputValue('#soyad'), DATA.soyad);
-  assert.equal(await panel.inputValue('#dogumYili'), DATA.dogumYili);
+  assert.equal(await panel.inputValue('#dogumTarihi'), '05.03.1990');
   assert.equal(await panel.locator('input.guessed').count(), 0);
   assert.equal((await pageValues(page)).values.txtTc, '', 'yapıştırma tek başına NVI formuna yazmaz');
   await panel.click('#fill-btn');
@@ -324,9 +328,9 @@ test('yapıştırma: etiketsiz metinde tahmin edilen alanlar işaretlenir; düze
   await panel.press('#paste-text', 'Control+Enter');
   const status = await waitStatus(/alan dolduruldu/);
   assert.match(status, /Tahmin edilen alanları kontrol edin: T\.C\. Kimlik No, Ad, Soyad/);
-  assert.match(status, /Eksik: Doğum Yılı/);
+  assert.match(status, /Eksik: Doğum Tarihi/);
   assert.equal(await panel.locator('input.guessed').count(), 3);
-  assert.equal(await panel.evaluate(() => document.activeElement.id), 'dogumYili', 'odak eksik alana gider');
+  assert.equal(await panel.evaluate(() => document.activeElement.id), 'dogumTarihi', 'odak eksik alana gider');
   await panel.fill('#ad', 'DÜZELTİLDİ');
   assert.equal(await panel.locator('input.guessed').count(), 2);
   await panel.click('#clear-btn');
@@ -363,6 +367,19 @@ test('simgeye tıklama yan paneli açar; panel komutu kayıtlı', async () => {
   assert.ok(cmds.some((c) => c.name === '_execute_action'), 'panel açma komutu kayıtlı');
 });
 
+test('yalnızca yıl girilirse gün/ay elle girilmek üzere boş bırakılır ve uyarılır', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=normal');
+  await openPanel(tabId);
+  await typeData({ ...DATA, dogumTarihi: '1990' });
+  await panel.click('#fill-btn');
+  await waitStatus(/Bazı alanlar aktarılamadı/);
+  assert.equal(await panel.locator('#field-results li[data-status="no_value"]').count(), 2);
+  assert.match(await panel.innerText('#field-results li[data-field="dogumGun"]'), /elle girin/);
+  const st = await pageValues(page);
+  assert.deepEqual([st.values.txtGun, st.values.txtAy, st.values.txtYil], ['', '', '1990']);
+  await page.close();
+});
+
 test('sekme kapalıysa hata', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=normal');
   await page.close();
@@ -384,7 +401,7 @@ test('panel erişilebilirlik temelleri: her alanın etiketi ve canlı durum böl
   await panel.focus('#tckn');
   const order = [];
   for (let i = 0; i < 6; i++) { await panel.keyboard.press('Tab'); order.push(await panel.evaluate(() => document.activeElement.id)); }
-  assert.deepEqual(order, ['ad', 'soyad', 'dogumYili', 'clear-after', 'fill-btn', 'clear-btn']);
+  assert.deepEqual(order, ['ad', 'soyad', 'dogumTarihi', 'clear-after', 'fill-btn', 'clear-btn']);
 });
 
 test('test boyunca dış ağa istek gitmedi', () => {

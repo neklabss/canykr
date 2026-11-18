@@ -5,7 +5,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const FIELD_LABELS = { tckn: 'T.C. Kimlik No', ad: 'Ad', soyad: 'Soyad', dogumYili: 'Doğum Yılı' };
+const FIELD_LABELS = { tckn: 'T.C. Kimlik No', ad: 'Adı', soyad: 'Soyad', dogumGun: 'Doğum Gün', dogumAy: 'Doğum Ay', dogumYili: 'Doğum Yılı' };
 
 async function checkDom(html) {
   const { chromium } = require('playwright');

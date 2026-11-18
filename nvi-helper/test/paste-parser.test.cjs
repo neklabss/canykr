@@ -11,14 +11,14 @@ const T2 = makeTckn('987654321');
 
 test('etiketli satırlar', () => {
   const r = parse(`T.C. Kimlik No: ${T1}\nAdı: Ayşe Nur\nSoyadı: Yılmaz\nDoğum Tarihi: 05.03.1990`, NOW);
-  assert.deepEqual(r.fields, { tckn: T1, ad: 'Ayşe Nur', soyad: 'Yılmaz', dogumYili: '1990' });
-  assert.deepEqual(r.source, { tckn: 'labeled', ad: 'labeled', soyad: 'labeled', dogumYili: 'labeled' });
+  assert.deepEqual(r.fields, { tckn: T1, ad: 'Ayşe Nur', soyad: 'Yılmaz', dogumTarihi: '05.03.1990' });
+  assert.deepEqual(r.source, { tckn: 'labeled', ad: 'labeled', soyad: 'labeled', dogumTarihi: 'labeled' });
   assert.deepEqual(r.warnings, []);
 });
 
 test('tek satırda ; ve virgülle ayrılmış etiketler', () => {
   const r = parse(`TC: ${T1}; Ad: Ali; Soyad: Kaya, Doğum Yılı: 1985`, NOW);
-  assert.deepEqual(r.fields, { tckn: T1, ad: 'Ali', soyad: 'Kaya', dogumYili: '1985' });
+  assert.deepEqual(r.fields, { tckn: T1, ad: 'Ali', soyad: 'Kaya', dogumTarihi: '1985' });
 });
 
 test('"Adı Soyadı" iki kelimeyse etiketli, daha fazlaysa tahmin sayılır', () => {
@@ -33,13 +33,13 @@ test('"Adı Soyadı" iki kelimeyse etiketli, daha fazlaysa tahmin sayılır', ()
 
 test('tablodan kopyalanan başlık + değer satırı (sekme ayraçlı)', () => {
   const r = parse(`Müşteri No\tAd\tSoyad\tTC Kimlik No\tDoğum Tarihi\n4471\tZeynep\tAk\t${T1}\t1.1.2001`, NOW);
-  assert.deepEqual(r.fields, { ad: 'Zeynep', soyad: 'Ak', tckn: T1, dogumYili: '2001' });
+  assert.deepEqual(r.fields, { ad: 'Zeynep', soyad: 'Ak', tckn: T1, dogumTarihi: '01.01.2001' });
   assert.equal(r.source.tckn, 'labeled');
 });
 
 test('etiketsiz metinde tahmin ve uyarı', () => {
   const r = parse(`Can Öztürk\n${T1}\n12.12.1979\n0555 000 00 00`, NOW);
-  assert.deepEqual(r.fields, { tckn: T1, dogumYili: '1979', ad: 'Can', soyad: 'Öztürk' });
+  assert.deepEqual(r.fields, { tckn: T1, dogumTarihi: '12.12.1979', ad: 'Can', soyad: 'Öztürk' });
   assert.ok(Object.values(r.source).every((s) => s === 'guessed'));
   assert.deepEqual(r.warnings, ['check_guessed']);
 });
@@ -53,15 +53,15 @@ test('kontrol basamağı tutmayan 11 haneli sayı (ör. telefon) T.C. sayılmaz'
 test('birden fazla geçerli T.C. veya yıl varsa alan boş bırakılır', () => {
   const r = parse(`${T1} ${T2} 1980 1990`, NOW);
   assert.equal(r.fields.tckn, undefined);
-  assert.equal(r.fields.dogumYili, undefined);
+  assert.equal(r.fields.dogumTarihi, undefined);
   assert.deepEqual(r.warnings.sort(), ['multiple_tckn', 'multiple_years']);
 });
 
-test('etiketli değer tahmine üstün gelir; tarihten yıl, gelecek yıl reddedilir', () => {
+test('etiketli değer tahmine üstün gelir; gelecekteki tarih reddedilir', () => {
   let r = parse(`Doğum Yılı: 1970\nKayıt: 01.01.2020`, NOW);
-  assert.equal(r.fields.dogumYili, '1970');
+  assert.equal(r.fields.dogumTarihi, '1970');
   r = parse('Doğum Tarihi: 01.01.2030', NOW);
-  assert.equal(r.fields.dogumYili, undefined);
+  assert.equal(r.fields.dogumTarihi, undefined);
 });
 
 test('boş, ilgisiz ve tek kelimelik metin', () => {
@@ -74,4 +74,10 @@ test('boş, ilgisiz ve tek kelimelik metin', () => {
 test('parantez içi notlar, rakam ve işaretler addan temizlenir', () => {
   const r = parse('Ad: Ali (müşteri)\nSoyad: Veli*', NOW);
   assert.deepEqual([r.fields.ad, r.fields.soyad], ['Ali', 'Veli']);
+});
+
+test('etiketsiz metinde yalnızca yıl varsa yıl, takvimde olmayan tarih reddedilir', () => {
+  assert.equal(parse(`Ali Veli\n${T1}\n1988`, NOW).fields.dogumTarihi, '1988');
+  assert.equal(parse('Doğum Tarihi: 31.02.1990', NOW).fields.dogumTarihi, undefined);
+  assert.equal(parse('Doğum Tarihi: 5/3/1990', NOW).fields.dogumTarihi, '05.03.1990');
 });

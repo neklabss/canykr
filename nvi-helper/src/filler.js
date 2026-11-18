@@ -2,20 +2,24 @@
  * NVI T.C. Kimlik No Doğrulama formu için alan eşleştirme ve doldurma.
  *
  * Kurallar:
- *  - Yalnızca dört alan doldurulur: T.C. Kimlik No, Ad, Soyad, Doğum Yılı.
+ *  - Yalnızca altı alan doldurulur: T.C. Kimlik No, Adı, Soyad, Doğum Gün, Doğum Ay,
+ *    Doğum Yılı. Nüfus cüzdanı / kimlik kartı seri no gibi isteğe bağlı alanlara ve
+ *    "Soyadı Nüfus Kayıtlarında Yok" kutusuna dokunulmaz.
  *  - Güvenlik kodu (CAPTCHA) alanına ve gönder düğmesine asla dokunulmaz.
  *  - Dolu bir alanın değeri korunur (üzerine yazılmaz).
  *  - Birden fazla adayı eşit puanlı olan alan "belirsiz" sayılır ve atlanır.
  *  - readonly / disabled alanlar (ör. sanal klavye açıkken) zorla değiştirilmez.
  *  - Sonuç nesnesinde hiçbir kişisel değer yer almaz; yalnızca durum kodları döner.
  *
- * SEÇİCİLER CANLI NVI DOM'U ÜZERİNDE DOĞRULANMAMIŞTIR. Eşleştirme id/name yerine
- * etiket, placeholder ve aria metinlerine dayanır ki küçük DOM değişikliklerine
- * dayanıklı olsun. Canlı DOM incelendiğinde FIELD_RULES güncellenmelidir.
+ * Alan etiketleri ve sırası NVİ'nin resmi kullanıcı kılavuzundaki (2020) ekran
+ * görüntüsünden alınmıştır. HTML id/name değerleri ve etiketlerin <label> ile bağlı
+ * olup olmadığı CANLI DOM ÜZERİNDE DOĞRULANMAMIŞTIR; bu yüzden eşleştirme etikete,
+ * id/name/placeholder/aria metnine ve bağlı etiket yoksa alanın hemen önündeki
+ * metne dayanır.
  */
 (function (root) {
   'use strict';
-  if (root.NviFiller && root.NviFiller.version >= 2) return;
+  if (root.NviFiller && root.NviFiller.version >= 3) return;
 
   const TR_MAP = { 'ı': 'i', 'İ': 'i', 'ş': 's', 'Ş': 's', 'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c' };
 
@@ -44,8 +48,18 @@
       contains: ['soyad', 'soyisim'],
       exclude: ['anne', 'baba', 'kizlik', 'onceki']
     },
+    dogumGun: {
+      exact: ['dogumgun', 'dogumgunu', 'gun', 'birthday', 'txtdogumgun'],
+      contains: ['dogumgun'],
+      exclude: ['ay', 'yil', 'tarih']
+    },
+    dogumAy: {
+      exact: ['dogumay', 'dogumayi', 'ay', 'birthmonth', 'txtdogumay'],
+      contains: ['dogumay'],
+      exclude: ['gun', 'yil', 'tarih']
+    },
     dogumYili: {
-      exact: ['dogumyili', 'dogumyiliniz', 'dogumyil', 'birthyear', 'dogumyiligiriniz', 'txtdogumyili'],
+      exact: ['dogumyili', 'dogumyiliniz', 'dogumyil', 'yil', 'birthyear', 'dogumyiligiriniz', 'txtdogumyili'],
       contains: ['dogumyil'],
       exclude: ['gun', 'ay', 'tarih']
     }
@@ -83,9 +97,35 @@
     return texts;
   }
 
+  function isFillable(el) {
+    return el.tagName === 'INPUT' && FILLABLE_TYPES.has((el.getAttribute('type') || '').toLowerCase());
+  }
+
+  // Bağlı etiket yoksa: alanın (ya da en fazla 4 üst öğesinin) önündeki kardeş
+  // metni etiket say. Aradaki kardeşlerden biri başka bir doldurulabilir alan
+  // içeriyorsa o metin ona aittir ve aramayı durdururuz.
+  function nearText(el) {
+    let node = el;
+    for (let depth = 0; depth < 4 && node.parentElement; depth++) {
+      const before = [];
+      for (let sib = node.previousSibling; sib; sib = sib.previousSibling) {
+        if (sib.nodeType === 1 && (isFillable(sib) || (sib.querySelector && Array.from(sib.querySelectorAll('input')).some(isFillable)))) {
+          return before.length ? before.reverse().join(' ') : '';
+        }
+        const t = sib.textContent || '';
+        if (t.trim()) before.push(t);
+      }
+      if (before.length) return before.reverse().join(' ');
+      node = node.parentElement;
+    }
+    return '';
+  }
+
   function descriptors(el) {
+    const labels = labelTexts(el).map(norm).filter(Boolean);
     return {
-      labels: labelTexts(el).map(norm).filter(Boolean),
+      labels,
+      near: labels.length ? [] : [norm(nearText(el))].filter(Boolean),
       attrs: [el.id, el.name, el.getAttribute('placeholder'), el.getAttribute('aria-label'), el.getAttribute('title')]
         .map(norm)
         .filter(Boolean)
@@ -93,24 +133,26 @@
   }
 
   function isForbidden(desc) {
-    const all = desc.labels.concat(desc.attrs);
+    const all = desc.labels.concat(desc.attrs, desc.near);
     return all.some((t) => FORBIDDEN.some((w) => t.includes(w)));
   }
 
+  // Bağlı etiket/özellik birebir eşleşmesi 3, yakın metin birebir eşleşmesi 2,
+  // içerme 1 puan. Yakın metin daha zayıf kanıttır; id/name ile çatışırsa onlar kazanır.
   function scoreFor(rule, desc) {
     let best = 0;
-    for (const t of desc.labels.concat(desc.attrs)) {
-      if (rule.exclude.some((x) => t.includes(x))) continue;
-      if (rule.exact.includes(t)) best = Math.max(best, 3);
+    const check = (t, exactScore) => {
+      if (rule.exclude.some((x) => t.includes(x))) return;
+      if (rule.exact.includes(t)) best = Math.max(best, exactScore);
       else if (rule.contains.some((c) => t.includes(c))) best = Math.max(best, 1);
-    }
+    };
+    for (const t of desc.labels.concat(desc.attrs)) check(t, 3);
+    for (const t of desc.near) check(t, 2);
     return best;
   }
 
   function candidates(doc) {
-    return Array.from(doc.querySelectorAll('input')).filter(
-      (el) => FILLABLE_TYPES.has((el.getAttribute('type') || '').toLowerCase()) && isVisible(el)
-    );
+    return Array.from(doc.querySelectorAll('input')).filter((el) => isFillable(el) && isVisible(el));
   }
 
   // Her mantıksal alan için { el } | { status: 'missing' | 'ambiguous' } döner.
@@ -142,10 +184,18 @@
     return out;
   }
 
+  // Sanal klavye seçeneği: onay kutusu ya da (resmi kılavuzdaki gibi) "Sanal Klavye
+  // Kullan" bağlantısı/düğmesi olabilir. Açık olduğu, işaretli kutudan ya da
+  // aria-pressed/aria-checked="true" ya da "active" sınıfından anlaşılır.
+  // Gerçek sayfadaki işaretleme DOĞRULANMADI.
   function detectVirtualKeyboard(doc) {
     for (const cb of doc.querySelectorAll('input[type="checkbox"]')) {
       const d = descriptors(cb);
-      if (d.labels.concat(d.attrs).some((t) => t.includes('sanalklavye')) && cb.checked) return true;
+      if (d.labels.concat(d.attrs, d.near).some((t) => t.includes('sanalklavye')) && cb.checked) return true;
+    }
+    for (const el of doc.querySelectorAll('a, button, [role="button"], [role="switch"], [role="checkbox"]')) {
+      if (!norm(el.textContent + ' ' + (el.getAttribute('aria-label') || '')).includes('sanalklavye')) continue;
+      if (el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-checked') === 'true' || el.classList.contains('active')) return true;
     }
     return false;
   }
@@ -186,7 +236,8 @@
   }
 
   /**
-   * data: { tckn, ad, soyad, dogumYili } (önceden doğrulanmış olmalı)
+   * data: { tckn, ad, soyad, dogumGun, dogumAy, dogumYili } (önceden doğrulanmış olmalı;
+   *       dogumGun/dogumAy boş olabilir → "no_value", görevli elle girer)
    * opts: { timeoutMs } — geç yüklenen alanlar için bekleme süresi.
    * Döner: { ok, fields: { [alan]: { status } }, filledCount, virtualKeyboard, timedOut, durationMs }
    */
@@ -231,7 +282,7 @@
     return counts;
   }
 
-  const api = { version: 2, fill, probe, resolveFields, norm, FIELD_RULES, FORBIDDEN };
+  const api = { version: 3, fill, probe, resolveFields, detectVirtualKeyboard, norm, FIELD_RULES, FORBIDDEN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NviFiller = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

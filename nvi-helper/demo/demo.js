@@ -3,11 +3,12 @@
   'use strict';
   const V = globalThis.NviValidation;
   const FIELDS = V.FIELDS;
-  const LABELS = { tckn: 'T.C. Kimlik No', ad: 'Ad', soyad: 'Soyad', dogumYili: 'Doğum Yılı' };
+  const LABELS = { tckn: 'T.C. Kimlik No', ad: 'Ad', soyad: 'Soyad', dogumTarihi: 'Doğum Tarihi' };
+  const FILL_LABELS = { tckn: 'T.C. Kimlik No', ad: 'Adı', soyad: 'Soyad', dogumGun: 'Doğum Gün', dogumAy: 'Doğum Ay', dogumYili: 'Doğum Yılı' };
   const STATUS = {
     filled: 'Dolduruldu', unchanged: 'Zaten aynı değer vardı', kept: 'Farklı değer vardı; korundu',
     missing: 'Bulunamadı', ambiguous: 'Belirsiz; atlandı', readonly: 'Salt okunur; elle girin',
-    disabled: 'Devre dışı; elle girin', too_long: 'Çok uzun; atlandı', rejected: 'Sayfa kabul etmedi', no_value: 'Değer yok', error: 'Hata'
+    disabled: 'Devre dışı; elle girin', too_long: 'Çok uzun; atlandı', rejected: 'Sayfa kabul etmedi', no_value: 'Değer yok; elle girin', error: 'Hata'
   };
   const $ = (id) => document.getElementById(id);
   const iframe = $('target');
@@ -34,7 +35,7 @@
     $('tckn').value = syntheticTckn();
     $('ad').value = 'DENEME';
     $('soyad').value = 'KULLANICI';
-    $('dogumYili').value = '1990';
+    $('dogumTarihi').value = '05.03.1990';
   });
 
   function showErrors(errors) {
@@ -70,16 +71,16 @@
     const result = await globalThis.NviFiller.fill(check.normalized, { document: iframe.contentDocument, timeoutMs: 3000 });
     const list = $('field-results');
     list.textContent = '';
-    for (const f of FIELDS) {
+    for (const f of V.FILL_FIELDS) {
       const li = document.createElement('li');
       li.dataset.field = f;
       li.dataset.status = result.fields[f].status;
-      li.textContent = LABELS[f] + ': ' + (STATUS[result.fields[f].status] || result.fields[f].status);
+      li.textContent = FILL_LABELS[f] + ': ' + (STATUS[result.fields[f].status] || result.fields[f].status);
       list.appendChild(li);
     }
     $('raw').textContent = JSON.stringify(result, null, 2);
     $('status').textContent = (result.ok ? 'SİMÜLASYON: alanlar aktarıldı. ' : 'SİMÜLASYON: bazı alanlar aktarılamadı. ') +
-      'Bu bir kimlik doğrulaması değildir; gerçek sayfada güvenlik kodu ve sorgu görevliye aittir.' +
+      'Bu bir kimlik doğrulaması değildir; gerçek sayfada "Ben robot değilim" kutusu ve Doğrula düğmesi görevliye aittir.' +
       (result.virtualKeyboard ? ' Sanal klavye açık.' : '');
   });
 })();
