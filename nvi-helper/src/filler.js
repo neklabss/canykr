@@ -19,7 +19,7 @@
  */
 (function (root) {
   'use strict';
-  if (root.NviFiller && root.NviFiller.version >= 4) return;
+  if (root.NviFiller && root.NviFiller.version >= 5) return;
 
   // ASCII 'I' de açıkça eşlenir: sayfa String.prototype.toLowerCase'i Türkçe kurala
   // göre değiştirirse ("I" → "ı") normalizasyon bozulmasın (canlı sayfada gözlendi).
@@ -214,15 +214,30 @@
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function fillOne(el, value) {
+  // Türkçe kurallarla büyük/küçük harf ve baştaki/sondaki boşluk farkını yok sayarak karşılaştırır.
+  // (Canlı sayfa ad/soyadı yazıldıktan sonra değiştiriyor; büyük harfe çevirme bunun olası nedeni.)
+  function sameText(a, b) {
+    return String(a).trim().toLocaleUpperCase('tr-TR') === String(b).trim().toLocaleUpperCase('tr-TR');
+  }
+
+  // Yazmadan önceki kontroller. null dönerse alan yazılabilir demektir.
+  function precheck(el, value) {
     if (el.disabled) return 'disabled';
     if (el.readOnly) return 'readonly';
     const current = el.value.trim();
-    if (current === value) return 'unchanged';
+    if (current === value || (current && sameText(current, value))) return 'unchanged';
     if (current !== '') return 'kept';
     if (el.maxLength > 0 && value.length > el.maxLength) return 'too_long';
-    setValue(el, value);
-    return el.value === value ? 'filled' : 'rejected';
+    return null;
+  }
+
+  // Yazdıktan sonra sayfanın değere ne yaptığına bakar. Değer döndürmez, yalnızca durum ve neden.
+  function verdict(el, value) {
+    const now = el.value;
+    if (now === value) return { status: 'filled' };
+    if (now.trim() === '') return { status: 'rejected', reason: 'cleared' };
+    if (sameText(now, value)) return { status: 'filled', reason: 'case_changed' };
+    return { status: 'rejected', reason: 'changed' };
   }
 
   function waitForFields(doc, timeoutMs) {
@@ -253,15 +268,25 @@
     const { resolved, timedOut } = await waitForFields(doc, timeoutMs);
     const fields = {};
     let filledCount = 0;
+    const written = [];
     for (const field of Object.keys(FIELD_RULES)) {
       const r = resolved[field];
       const value = data && data[field] != null ? String(data[field]) : '';
       if (!r.el) { fields[field] = { status: r.status }; continue; }
       if (!value) { fields[field] = { status: 'no_value' }; continue; }
-      let status;
-      try { status = fillOne(r.el, value); } catch (e) { status = 'error'; }
-      if (status === 'filled') filledCount += 1;
-      fields[field] = { status };
+      try {
+        const pre = precheck(r.el, value);
+        if (pre) { fields[field] = { status: pre }; continue; }
+        setValue(r.el, value);
+        written.push({ field, el: r.el, value });
+      } catch (e) { fields[field] = { status: 'error' }; }
+    }
+    // Sayfanın kendi betikleri (Angular, maske, büyük harf dönüşümü) değeri hemen ya da
+    // bir sonraki turda değiştirebilir; karar vermeden önce kısa bir süre bekle.
+    if (written.length) await new Promise((r) => setTimeout(r, Math.max(0, Number((opts && opts.settleMs) ?? 80))));
+    for (const w of written) {
+      fields[w.field] = verdict(w.el, w.value);
+      if (fields[w.field].status === 'filled') filledCount += 1;
     }
     const ok = Object.values(fields).every((f) => f.status === 'filled' || f.status === 'unchanged');
     return {
@@ -287,7 +312,7 @@
     return counts;
   }
 
-  const api = { version: 4, fill, probe, resolveFields, detectVirtualKeyboard, norm, FIELD_RULES, FORBIDDEN };
+  const api = { version: 5, fill, probe, resolveFields, detectVirtualKeyboard, norm, FIELD_RULES, FORBIDDEN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NviFiller = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
