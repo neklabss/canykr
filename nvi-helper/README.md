@@ -227,14 +227,34 @@ elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 
 ### Canlı sayfayı Playwright ile inceleme (kendi bilgisayarınızda)
 
-NVI'ye erişebilen (Türkiye'deki, yetkili) bir bilgisayarda:
+NVI'ye erişebilen (Türkiye'deki, yetkili) bir bilgisayarda, Node.js (LTS) kurulu olarak, aşağıdaki
+komutları **tek tek** çalıştırın. Windows PowerShell 5.1 `&&` ile birleştirilmiş komutları
+kabul etmez.
 
-```bash
-cd nvi-helper
+Windows (PowerShell):
+
+```powershell
+Invoke-WebRequest https://github.com/neklabss/canykr/archive/refs/heads/main.zip -OutFile canykr.zip
+Expand-Archive canykr.zip -DestinationPath . -Force
+cd canykr-main\nvi-helper
 npm install --no-save playwright@1.63.0
 npx playwright install chromium
-npm run inspect-live -- --sanal-klavye
+node scripts\inspect-live.cjs --sanal-klavye
+Get-Content nvi-inspect\inspect-report.json
 ```
+
+macOS / Linux:
+
+```bash
+git clone https://github.com/neklabss/canykr
+cd canykr/nvi-helper
+npm install --no-save playwright@1.63.0
+npx playwright install chromium
+node scripts/inspect-live.cjs --sanal-klavye
+```
+
+Betik `npm run` yerine doğrudan `node` ile çalıştırılır, çünkü PowerShell 5.1 `--` ile verilen
+ek seçenekleri npm'e her zaman iletmez.
 
 Betik (`scripts/inspect-live.cjs`):
 
