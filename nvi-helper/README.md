@@ -219,8 +219,10 @@ elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 
 ## Canlı ortamda henüz doğrulanmayanlar
 
-Alan yapısı canlıda doğrulandı. **Doldurma işlemi ise canlı sayfada henüz denenmedi.** Açık
-kalan noktalar:
+Alan yapısı canlıda doğrulandı. **Doldurma da canlıda denendi (18.11.2026):** eklenti yan
+panelden gerçek olmayan (sentetik) bilgilerle aktarım yapıldı ve değerler NVI formundaki
+alanlara yazıldı (kullanıcı gözlemi; Doğrula'ya basılmadı, sorgu gönderilmedi). Açık kalan
+noktalar:
 
 1. **Angular'ın değeri kabul etmesi.** Eklenti değeri yazıp `input` ve `change` olaylarını
    tetikliyor. Angular'ın `DefaultValueAccessor`'ı `input` olayını dinler; simülasyonda model
