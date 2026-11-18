@@ -22,7 +22,7 @@ async function checkDom(html) {
       const describe = (el) => {
         const labels = el.labels ? [...el.labels].map((l) => l.textContent.trim().replace(/\s+/g, ' ')) : [];
         return {
-          tag: el.tagName.toLowerCase(), type: el.getAttribute('type') || '', id: el.id || '', name: el.name || '',
+          tag: el.localName, type: el.getAttribute('type') || '', id: el.id || '', name: el.name || '',
           placeholder: el.getAttribute('placeholder') || '', ariaLabel: el.getAttribute('aria-label') || '',
           labels, readOnly: el.readOnly, disabled: el.disabled, maxLength: el.maxLength,
           hasValue: !!el.value

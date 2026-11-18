@@ -57,11 +57,13 @@ test('geç yüklenen formu bekler, eşleştirmeyi raporlar, temiz HTML check-dom
   } finally { fs.rmSync(out, { recursive: true, force: true }); }
 });
 
-test('sanal klavye açık senaryosu: readonly ve açık durum raporlanır', async () => {
+test('sanal klavye açık senaryosu: canlıdaki div.sanalKlavye.active algılanır, alanlar yazılabilir', async () => {
   const { report, out } = await inspect('vkeyboard');
   try {
     const frame = report.before.find((f) => f.mapping);
     assert.equal(frame.virtualKeyboardDetected, true);
-    assert.equal(frame.mapping.tckn.element.readOnly, true);
+    assert.equal(frame.mapping.tckn.element.readOnly, false);
+    assert.equal(frame.mapping.tckn.element.id, 'requestTCKimlikNo');
+    assert.equal(frame.mapping.tckn.element.tag, 'input');
   } finally { fs.rmSync(out, { recursive: true, force: true }); }
 });

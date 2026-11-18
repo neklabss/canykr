@@ -41,14 +41,14 @@ test('kılavuzdaki düzen: altı alan doldurulur; belge, reCAPTCHA ve Doğrula\'
   assert.deepEqual(statuses(result), ALL('filled'));
   assert.equal(result.ok, true);
   assert.equal(result.filledCount, 6);
-  assert.equal(state.values.txtTc, DATA.tckn);
-  assert.equal(state.values.txtAd, 'DENEME');
-  assert.equal(state.values.txtSoyad, 'KULLANICI');
-  assert.deepEqual([state.values.txtGun, state.values.txtAy, state.values.txtYil], ['05', '03', '1990']);
-  for (const id of ['txtCuzdanSeri', 'txtKartSeri', 'txtGeciciNo']) assert.equal(state.values[id], '', id + ' (isteğe bağlı belge alanı) boş kalır');
+  assert.equal(state.values.requestTCKimlikNo, DATA.tckn);
+  assert.equal(state.values.requestAd, 'DENEME');
+  assert.equal(state.values.requestSoyad, 'KULLANICI');
+  assert.deepEqual([state.values.requestDogumGun, state.values.requestDogumAy, state.values.requestDogumYil], ['05', '03', '1990']);
+  for (const id of ['requestCuzdanSeriNo', 'requestTckkSeriNo', 'requestGeciciKimlikNo']) assert.equal(state.values[id], '', id + ' (isteğe bağlı belge alanı) boş kalır');
   assert.deepEqual(state.checks, { chkSoyadYok: false, chkRobot: false }, '"Soyadı yok" ve "Ben robot değilim" kutularına dokunulmaz');
   assert.equal(state.submitted, 0, 'Doğrula\'ya basılmaz');
-  assert.ok(state.events.includes('input:txtTc') && state.events.includes('change:txtTc'), 'input/change olayları tetiklenir');
+  assert.ok(state.events.includes('input:requestTCKimlikNo') && state.events.includes('change:requestTCKimlikNo'), 'input/change olayları tetiklenir');
 });
 
 test('etiketler <label> ile bağlı değilse alanın önündeki metinden eşleşir', async () => {
@@ -65,7 +65,7 @@ test('yalnızca doğum yılı verilirse gün ve ay "no_value" olur, ok=false', a
   assert.equal(result.fields.dogumAy.status, 'no_value');
   assert.equal(result.fields.dogumYili.status, 'filled');
   assert.equal(result.ok, false);
-  assert.deepEqual([state.values.txtGun, state.values.txtAy], ['', '']);
+  assert.deepEqual([state.values.requestDogumGun, state.values.requestDogumAy], ['', '']);
 });
 
 test('sonuç nesnesi kişisel veri içermez', async () => {
@@ -77,7 +77,7 @@ test('sonuç nesnesi kişisel veri içermez', async () => {
 test('dolu alan korunur, aynı değer "unchanged" sayılır', async () => {
   const kept = await run('prefilled');
   assert.equal(kept.result.fields.ad.status, 'kept');
-  assert.equal(kept.state.values.txtAd, 'ÖNCEDEN');
+  assert.equal(kept.state.values.requestAd, 'ÖNCEDEN');
   assert.equal(kept.result.ok, false);
   const same = await run('prefilled', { data: { ...DATA, ad: 'ÖNCEDEN' } });
   assert.equal(same.result.fields.ad.status, 'unchanged');
@@ -87,8 +87,8 @@ test('dolu alan korunur, aynı değer "unchanged" sayılır', async () => {
 test('belirsiz alan atlanır ve hiçbiri doldurulmaz', async () => {
   const { result, state } = await run('ambiguous');
   assert.equal(result.fields.soyad.status, 'ambiguous');
-  assert.equal(state.values.txtSoyad, '');
-  assert.equal(state.values.txtSoyad2, '');
+  assert.equal(state.values.requestSoyad, '');
+  assert.equal(state.values.requestSoyad2, '');
   assert.equal(result.fields.ad.status, 'filled');
 });
 
@@ -112,17 +112,53 @@ test('form yoksa zaman aşımı ve missing', async () => {
   assert.equal(result.filledCount, 0);
 });
 
-test('sanal klavye (aria-pressed bağlantı) açıkken readonly alanlar zorla değiştirilmez', async () => {
+test('canlı sayfadaki gibi sanal klavye açık (div.sanalKlavye.active): algılanır, alanlar yine doldurulur', async () => {
   const { result, state } = await run('vkeyboard');
   assert.equal(result.virtualKeyboard, true);
+  assert.deepEqual(statuses(result), ALL('filled'));
+  assert.equal(state.values.requestTCKimlikNo, DATA.tckn);
+});
+
+test('salt okunur alanlar zorla değiştirilmez', async () => {
+  const { result, state } = await run('readonly');
   assert.deepEqual(statuses(result), ALL('readonly'));
-  assert.equal(state.values.txtTc, '');
+  assert.equal(state.values.requestTCKimlikNo, '');
+});
+
+test('Angular benzeri model "input" olayıyla güncellenir; sanal klavye kapalıyken algılanmaz', async () => {
+  const page = await browser.newPage();
+  await page.goto(`${base}/test/fixtures/nvi-like.html?scenario=normal`);
+  await page.addScriptTag({ path: FILLER });
+  const result = await page.evaluate((d) => window.NviFiller.fill(d, { timeoutMs: 1000 }), DATA);
+  const model = await page.evaluate(() => window.__model);
+  const cls = await page.getAttribute('#requestAd', 'class');
+  await page.close();
+  assert.equal(result.virtualKeyboard, false);
+  assert.deepEqual(model, { requestTCKimlikNo: DATA.tckn, requestAd: 'DENEME', requestSoyad: 'KULLANICI', requestDogumGun: '05', requestDogumAy: '03', requestDogumYil: '1990' });
+  assert.match(cls, /ng-dirty/);
+});
+
+test('sayfa toLowerCase\'i Türkçe kurala çevirse bile (canlıda gözlendi) büyük harfli etiketler eşleşir', async () => {
+  const { result, state } = await run('trlower');
+  assert.deepEqual(statuses(result), ALL('filled'));
+  assert.equal(state.values.f6, '1990');
+});
+
+test('"Geçici Kimlik Belge No" (requestGeciciKimlikNo) T.C. Kimlik No ile karışmaz', async () => {
+  const page = await browser.newPage();
+  await page.goto(`${base}/test/fixtures/nvi-like.html?scenario=normal`);
+  await page.addScriptTag({ path: FILLER });
+  // Asıl T.C. alanını kaldırınca geçici belge alanı onun yerine seçilmemeli.
+  await page.evaluate(() => document.getElementById('requestTCKimlikNo').closest('.row').remove());
+  const st = await page.evaluate(() => window.NviFiller.resolveFields(document).tckn.status);
+  await page.close();
+  assert.equal(st, 'missing');
 });
 
 test('disabled alan atlanır, diğerleri doldurulur', async () => {
   const { result, state } = await run('disabled');
   assert.equal(result.fields.soyad.status, 'disabled');
-  assert.equal(state.values.txtSoyad, '');
+  assert.equal(state.values.requestSoyad, '');
   assert.equal(result.filledCount, 5);
 });
 
@@ -148,7 +184,7 @@ test('demo.html: simülasyon etiketi görünür ve demo panel doldurur', async (
   const page = await browser.newPage();
   await page.goto(`${base}/demo/demo.html`);
   assert.match(await page.locator('.banner').innerText(), /SİMÜLASYON/);
-  await page.frameLocator('#target').locator('#txtTc').waitFor();
+  await page.frameLocator('#target').locator('#requestTCKimlikNo').waitFor();
   await page.click('#sample-btn');
   await page.click('#fill-btn');
   await page.waitForFunction(() => document.querySelectorAll('#field-results li').length === 6);

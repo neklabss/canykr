@@ -21,32 +21,39 @@ Doğrulama** formuna aktarmasını sağlar.
 **"Ben robot değilim"** kutusunu işaretlemek, **Doğrula**'ya basmak ve sonucu NVI sayfasından
 okumak görevliye aittir.
 
-## Gerçek sayfa hakkında bilinenler (araştırma, Kasım 2026)
+## Gerçek sayfa hakkında bilinenler
 
-Canlı sayfa bu geliştirme ortamından açılamadı: hem `curl` hem Playwright ile açılan Chromium,
-sunucunun bağlantıyı yanıtsız kesmesiyle karşılaştı (büyük olasılıkla yurt dışı/veri merkezi
-IP'leri engelleniyor). Dış bir getirme aracıyla sayfa HTTP 200 döndü, ancak içerik yalnızca
-çerez bandıydı. Bu da formun **tarayıcıda JavaScript ile oluşturulduğunu** gösteriyor. Eklentinin
-geç yüklenen alanları beklemesi bu yüzden önemli.
+### Canlı sayfanın salt okunur incelemesi (18.11.2026, `scripts/inspect-live.cjs`)
 
-Aşağıdakiler NVİ'nin resmi **tckimlik.nvi.gov.tr Kullanıcı Kılavuzu**'ndan
-(`https://tckimlik.nvi.gov.tr/Pages/Help/TCKIMLIK_KULLANICI_KILAVUZU.pdf`, 18.08.2020,
-bölüm 1.2.1) ve içindeki ekran görüntüsünden alındı:
+Sayfa, NVI'ye erişebilen bir bilgisayarda Playwright ile açıldı ve boş form salt okunur
+incelendi. Hiçbir alana yazılmadı, hiçbir şey gönderilmedi.
 
-| Bilgi | Kaynaktaki hali | Eklentide |
-| --- | --- | --- |
-| Sayfa yolu | `/Modul/TcKimlikNoDogrula` (sayfa başlığı "T.C. Kimlik No Doğrulama - Nüfus ve Vatandaşlık İşleri Genel Müdürlüğü", arama dizini) | `src/nvi-url.js` |
-| Zorunlu bölüm | T.C. Kimlik No, **Adı**, Soyad, **Doğum Gün**, **Doğum Ay**, **Doğum Yılı** (ayrı alanlar, bu sırayla) | Altı alan da eşleştirilir |
-| Soyad altı | "Soyadı Nüfus Kayıtlarında Yok." onay kutusu | Dokunulmaz |
-| İsteğe bağlı belge alanları | Nüfus Cüzdanı Seri No (örn: A0123456), T.C. Kimlik Kartı Seri No (örn: A01B23456), Geçici Kimlik Belge No (örn: 123456). Doldurulmazsa kütükteki son "Açık" kayıt doğrulanır | Dokunulmaz |
-| Güvenlik | "Ben robot değilim" (Google reCAPTCHA), ardından **Doğrula** düğmesi | Dokunulmaz; reCAPTCHA iframe'ine izin yok |
-| Sanal klavye | "Sanal Klavye Kullan" seçeneği; "alanlara gelindikçe ekranın altında beliren sanal klavye ile veri girişi" | Algılanır (bkz. doğrulanmayanlar) |
-| Hata durumları | Zorunlu alan boş, yanlış biçim, kayıt bulunamadı → sistem uyarı mesajı | Sonuç okunmaz |
+| Bilgi | Canlı sayfada |
+| --- | --- |
+| Adres / başlık | `https://tckimlik.nvi.gov.tr/Modul/TcKimlikNoDogrula`, "T.C. Kimlik No Doğrulama - Nüfus ve Vatandaşlık İşleri Genel Müdürlüğü" |
+| Çatı | Angular 4.4.7 (`ng-version`), alanlarda `form-control ng-untouched ng-pristine ng-invalid`; form `novalidate`, `method="get"` |
+| Zorunlu alanlar (etiketler `<label>` ile bağlı) | `requestTCKimlikNo` "T.C. Kimlik No" (maxlength 11), `requestAd` "Adı", `requestSoyad` "Soyad", `requestDogumGun` "Doğum Gün" (2), `requestDogumAy` "Doğum Ay" (2), `requestDogumYil` "Doğum Yılı" (4) |
+| İsteğe bağlı | `chkSoyadYok` "Soyadı Nüfus Kayıtlarında Yok." (onay kutusu), `requestCuzdanSeriNo`, `requestTckkSeriNo` "Seri No", `requestGeciciKimlikNo` "Geçici Kimlik Belge No" |
+| Güvenlik | Google reCAPTCHA (`g-recaptcha-response` textarea + google.com iframe'leri), **Doğrula** düğmesi (`button.btn.btn-info`) |
+| Sanal klavye | `<div class="sanalKlavye" tooltip="Sanal Klavye Kullan">`; tıklanınca yalnızca `active` sınıfı eklenir. **Alanlar salt okunur olmaz.** |
+| Diğer | F5 bot koruması (`/TSPD/`) gizli çerçeveler ekler (alan yok); çerez bandında "Kabul et" düğmesi var; sayfa `String.prototype.toLowerCase`'i Türkçe kurala göre değiştiriyor (`I` → `ı`) |
 
-Kılavuz 2020 tarihli. Görsel tasarım, HTML `id`/`name` değerleri ve etiketlerin `<label>` ile
-bağlı olup olmadığı **hâlâ doğrulanmadı**. Bunları doğrulamak için aşağıdaki
-[Canlı sayfayı Playwright ile inceleme](#canlı-sayfayı-playwright-ile-inceleme-kendi-bilgisayarınızda)
-adımlarına bakın.
+Sonuç: eklentinin alan eşleştirmesi canlı DOM'da altı alanın altısını doğru buldu, belirsizlik
+yoktu. Bu bulgular üzerine:
+- sanal klavye algılaması `div.sanalKlavye.active` biçimine göre düzeltildi,
+- normalizasyon ASCII `I` için sağlamlaştırıldı,
+- T.C. Kimlik No kuralına "geçici" dışlaması eklendi (`requestGeciciKimlikNo` zayıf aday oluyordu),
+- simülasyon formu gerçek id'ler, TSPD çerçevesi ve çerez bandıyla güncellendi.
+
+### Resmi kılavuz
+
+NVİ'nin [tckimlik.nvi.gov.tr Kullanıcı Kılavuzu](https://tckimlik.nvi.gov.tr/Pages/Help/TCKIMLIK_KULLANICI_KILAVUZU.pdf)
+(18.08.2020, bölüm 1.2.1) aynı alanları ve sırayı gösterir. Kılavuza göre "Ben robot değilim"
+işaretlenip Doğrula'ya basılır. Zorunlu alan boş bırakılırsa, biçim yanlışsa ya da kayıt
+bulunamazsa sistem uyarı verir.
+
+Bu geliştirme ortamından (bulut) sayfa açılamıyor; sunucu bağlantıyı yanıtsız kesiyor.
+İnceleme bu yüzden kullanıcının bilgisayarında yapıldı.
 
 ## Kurulum (geliştirici modu)
 
@@ -161,10 +168,11 @@ npm run demo
 ```
 
 `http://127.0.0.1:8765/` adresini açın. Sağdaki form **gerçek NVI sayfası değildir**;
-alan etiketleri ve sırası resmi kılavuzdaki ekran görüntüsünden alınmıştır, HTML yapısı
-tahminidir. Senaryolar: normal, `<label>` ile bağlı olmayan etiketler, önceden dolu alan,
-belirsiz alan, geç yüklenen alanlar, hiç gelmeyen alanlar, sanal klavye (varsayım: readonly),
-devre dışı alan, değeri reddeden sayfa, yalnızca id'li alanlar, form yok. **Sentetik örnek veri** düğmesi kontrol basamağı
+alan id'leri ve etiketleri canlı sayfanın salt okunur incelemesinden alınmıştır; Angular davranışı
+tahminidir. Senaryolar: normal (canlıdaki id'ler, TSPD çerçevesi, çerez bandı), `<label>` ile
+bağlı olmayan etiketler, büyük harfli etiketler ve Türkçe `toLowerCase`, önceden dolu alan,
+belirsiz alan, geç yüklenen alanlar, hiç gelmeyen alanlar, sanal klavye açık (canlıdaki gibi),
+salt okunur alanlar, devre dışı alan, değeri reddeden sayfa, yalnızca id'li alanlar, form yok. **Sentetik örnek veri** düğmesi kontrol basamağı
 tutan rastgele bir numara üretir; gerçek kişi bilgisi girmeyin.
 
 ## Testler
@@ -211,19 +219,23 @@ elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 
 ## Canlı ortamda henüz doğrulanmayanlar
 
-1. **HTML yapısı.** Alan etiketleri ve sırası resmi kılavuzdan alındı. `id`/`name` değerleri,
-   etiketlerin bağlı olup olmadığı ve 2020'den sonra tasarımın değişip değişmediği bilinmiyor.
-2. **Sanal klavye.** Kılavuz klavyenin "alanlara gelindikçe" belirdiğini söylüyor. Alanları
-   salt okunur yapıp yapmadığı ve seçeneğin onay kutusu mu bağlantı mı olduğu bilinmiyor.
-   Eklenti iki biçimi de algılar; salt okunur alanı zorla değiştirmez.
-3. **Gün/ay biçimi.** Gün ve ay `05` gibi iki haneli yazılıyor; sayfa `5` bekliyor olabilir.
-4. **Sayfanın kendi betikleri.** Form JavaScript ile oluşturuluyor. `input`/`change` olaylarının
-   sayfanın çatısı (React/Angular/jQuery vb.) tarafından kabul edildiği doğrulanmadı. Değer
-   kalmazsa `rejected` bildirilir.
-5. **iframe.** Form NVI host'undaki bir iframe içindeyse desteklenir. Başka bir alan adından
-   yüklenen iframe'deyse eklentinin izni olmadığı için doldurulamaz (bilerek).
-6. Ad/soyadın büyük harfe çevrilmesi gerekip gerekmediği bilinmiyor; değerler yazıldığı gibi
-   aktarılır.
+Alan yapısı canlıda doğrulandı. **Doldurma işlemi ise canlı sayfada henüz denenmedi.** Açık
+kalan noktalar:
+
+1. **Angular'ın değeri kabul etmesi.** Eklenti değeri yazıp `input` ve `change` olaylarını
+   tetikliyor. Angular'ın `DefaultValueAccessor`'ı `input` olayını dinler; simülasyonda model
+   güncelleniyor ama canlıda gözlenmedi. Değer DOM'da kalmazsa `rejected` bildirilir. Model
+   güncellenmezse sayfa Doğrula'da "zorunlu alan" uyarısı verebilir.
+2. **Gün/ay biçimi.** `05` yazılıyor (maxlength 2). Sayfanın `5`'i tercih edip etmediği bilinmiyor.
+3. **Sanal klavye açıkken davranış.** Alanlar yazılabilir kalıyor, ama klavyenin kendi
+   modelinin eklentinin yazdığı değerle çakışıp çakışmadığı gözlenmedi. Panel bu durumda
+   "değerleri sayfada kontrol edin" der.
+4. **Ad/soyad büyük harf.** Değerler yazıldığı gibi aktarılıyor; sayfa kendisi dönüştürüyor olabilir.
+
+Önerilen deneme: eklentiyi kurun, panelden **gerçek olmayan** (demo sayfasındaki "Sentetik
+örnek veri" gibi) bilgilerle bir kez aktarın. Doğrula'ya **basmadan** alanlara yazılan
+değerleri ve alanların kırmızı/yeşil (geçerli/geçersiz) durumunu gözle kontrol edin.
+Sonra sayfayı yenileyin.
 
 ### Canlı sayfayı Playwright ile inceleme (kendi bilgisayarınızda)
 
@@ -241,7 +253,7 @@ cd canykr-main\nvi-helper
 npm install --no-save playwright@1.63.0
 npx playwright install chromium
 node scripts\inspect-live.cjs --sanal-klavye
-Get-Content nvi-inspect\inspect-report.json
+Get-Content -Encoding UTF8 nvi-inspect\inspect-report.json
 ```
 
 macOS / Linux:

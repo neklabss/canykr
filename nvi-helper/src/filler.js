@@ -11,21 +11,23 @@
  *  - readonly / disabled alanlar (ör. sanal klavye açıkken) zorla değiştirilmez.
  *  - Sonuç nesnesinde hiçbir kişisel değer yer almaz; yalnızca durum kodları döner.
  *
- * Alan etiketleri ve sırası NVİ'nin resmi kullanıcı kılavuzundaki (2020) ekran
- * görüntüsünden alınmıştır. HTML id/name değerleri ve etiketlerin <label> ile bağlı
- * olup olmadığı CANLI DOM ÜZERİNDE DOĞRULANMAMIŞTIR; bu yüzden eşleştirme etikete,
- * id/name/placeholder/aria metnine ve bağlı etiket yoksa alanın hemen önündeki
- * metne dayanır.
+ * Canlı sayfanın salt okunur incelemesi (18.11.2026): alanlar <label> ile bağlı
+ * (requestTCKimlikNo, requestAd, requestSoyad, requestDogumGun, requestDogumAy,
+ * requestDogumYil) ve bu kurallarla altısı da belirsizlik olmadan eşleşiyor. Eşleştirme
+ * yine de sabit id'lere değil etikete, id/name/placeholder/aria metnine ve bağlı etiket
+ * yoksa alanın hemen önündeki metne dayanır ki sayfa güncellenince kırılmasın.
  */
 (function (root) {
   'use strict';
-  if (root.NviFiller && root.NviFiller.version >= 3) return;
+  if (root.NviFiller && root.NviFiller.version >= 4) return;
 
-  const TR_MAP = { 'ı': 'i', 'İ': 'i', 'ş': 's', 'Ş': 's', 'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c' };
+  // ASCII 'I' de açıkça eşlenir: sayfa String.prototype.toLowerCase'i Türkçe kurala
+  // göre değiştirirse ("I" → "ı") normalizasyon bozulmasın (canlı sayfada gözlendi).
+  const TR_MAP = { 'I': 'i', 'ı': 'i', 'İ': 'i', 'ş': 's', 'Ş': 's', 'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c' };
 
   function norm(text) {
     return String(text || '')
-      .replace(/[ıİşŞğĞüÜöÖçÇ]/g, (c) => TR_MAP[c])
+      .replace(/[IıİşŞğĞüÜöÖçÇ]/g, (c) => TR_MAP[c])
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
   }
@@ -36,7 +38,7 @@
     tckn: {
       exact: ['tckimlikno', 'tckimliknumarasi', 'tckimliknumaraniz', 'kimlikno', 'kimliknumarasi', 'tcno', 'tckn', 'tckimlik', 'tcknno', 'tckimliknogiriniz'],
       contains: ['tckimlik', 'kimlikno', 'kimliknumara', 'tckn'],
-      exclude: ['seri', 'belge', 'anne', 'baba']
+      exclude: ['seri', 'belge', 'gecici', 'anne', 'baba']
     },
     ad: {
       exact: ['ad', 'adi', 'adiniz', 'isim', 'isminiz', 'adgiriniz', 'name', 'firstname', 'txtad'],
@@ -184,17 +186,20 @@
     return out;
   }
 
-  // Sanal klavye seçeneği: onay kutusu ya da (resmi kılavuzdaki gibi) "Sanal Klavye
-  // Kullan" bağlantısı/düğmesi olabilir. Açık olduğu, işaretli kutudan ya da
-  // aria-pressed/aria-checked="true" ya da "active" sınıfından anlaşılır.
-  // Gerçek sayfadaki işaretleme DOĞRULANMADI.
+  // Sanal klavye seçeneği. Canlı sayfada (Kasım 2026): <div class="sanalKlavye"> içinde
+  // <label>Sanal Klavye Kullan</label>; tıklanınca div'e "active" sınıfı eklenir ve
+  // alanlar salt okunur OLMAZ. Onay kutusu ve aria-pressed biçimleri de desteklenir.
+  // Yalnızca bilgi amaçlıdır; doldurmayı engellemez.
   function detectVirtualKeyboard(doc) {
     for (const cb of doc.querySelectorAll('input[type="checkbox"]')) {
       const d = descriptors(cb);
       if (d.labels.concat(d.attrs, d.near).some((t) => t.includes('sanalklavye')) && cb.checked) return true;
     }
-    for (const el of doc.querySelectorAll('a, button, [role="button"], [role="switch"], [role="checkbox"]')) {
-      if (!norm(el.textContent + ' ' + (el.getAttribute('aria-label') || '')).includes('sanalklavye')) continue;
+    const sel = 'a, button, [role="button"], [role="switch"], [role="checkbox"], [class*="klavye" i], [class*="keyboard" i]';
+    for (const el of doc.querySelectorAll(sel)) {
+      const names = norm(el.className && typeof el.className === 'string' ? el.className : '') + ' ' +
+        norm(el.textContent + ' ' + (el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute('tooltip') || ''));
+      if (!names.includes('sanalklavye')) continue;
       if (el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-checked') === 'true' || el.classList.contains('active')) return true;
     }
     return false;
@@ -282,7 +287,7 @@
     return counts;
   }
 
-  const api = { version: 3, fill, probe, resolveFields, detectVirtualKeyboard, norm, FIELD_RULES, FORBIDDEN };
+  const api = { version: 4, fill, probe, resolveFields, detectVirtualKeyboard, norm, FIELD_RULES, FORBIDDEN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.NviFiller = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

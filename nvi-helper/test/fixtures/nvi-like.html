@@ -8,86 +8,106 @@
     .sim { background: #fff3cd; border: 2px dashed #9a6700; padding: 8px; margin-bottom: 12px; font-weight: 700; }
     h3 { color: #c0703a; font-size: 13px; text-decoration: underline; margin: 18px 0 6px; }
     .row { display: flex; align-items: flex-start; margin: 6px 0; }
-    .row > .lbl, .row > label { flex: 0 0 220px; font-weight: 600; font-size: 12px; padding-top: 4px; }
+    .row > .lbl, .row > label, .row > .lblwrap { flex: 0 0 220px; font-weight: 600; font-size: 12px; padding-top: 4px; }
     .row input[type=text] { width: 260px; padding: 4px; }
+    .req { color: #b42318; margin-left: 2px; }
     .hint { font-size: 12px; margin-top: 2px; }
     .note { background: #fdf6e3; padding: 8px; font-size: 12px; margin: 12px 0; }
     .robot { display: inline-flex; gap: 8px; align-items: center; border: 1px solid #ccc; padding: 12px; margin: 10px 0; background: #f9f9f9; }
-    .vk { cursor: pointer; font-size: 12px; color: #555; }
+    .sanalKlavye { cursor: pointer; font-size: 12px; color: #555; display: inline-flex; gap: 4px; align-items: center; }
+    .sanalKlavye.active { color: #0b5cad; font-weight: 700; }
     .keypad { display: none; gap: 4px; margin: 8px 0; }
     .keypad.on { display: flex; }
+    .cookies { position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: #fff; padding: 8px; font-size: 12px; }
+    .tspd { width: 0; height: 0; border: 0; position: absolute; }
   </style>
 </head>
 <body>
-  <div class="sim" role="note">SİMÜLASYON: Bu sayfa gerçek NVI sayfası değildir. Alan etiketleri ve sırası NVİ kullanıcı kılavuzundaki (2020) ekran görüntüsünden alınmıştır; HTML yapısı (id/name, etiket bağlantısı) tahminidir.</div>
+  <div class="sim" role="note">SİMÜLASYON: Bu sayfa gerçek NVI sayfası değildir. Alan id'leri, etiketleri ve sanal klavye öğesi canlı sayfanın salt okunur incelemesinden (Kasım 2026) alınmıştır; sayfa Angular ile çalışır, burada küçük bir taklit vardır.</div>
   <div id="host"></div>
   <script>
   (function () {
-    // ?scenario=normal|divlabels|prefilled|ambiguous|late|never|vkeyboard|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
+    // ?scenario=normal|tspd|divlabels|trlower|prefilled|ambiguous|late|never|vkeyboard|readonly|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
     var scenario = new URLSearchParams(location.search).get('scenario') || 'normal';
     window.__submitted = 0;
     window.__events = [];
+    window.__model = {};
 
-    // divlabels: etiketler <label for> ile BAĞLI DEĞİL; id'ler anlamsız (yakın metin sezgisi testi).
+    if (scenario === 'tspd') {
+      // F5 bot koruması (TSPD) benzeri gizli çerçeve: alan yok, gizli bir form var.
+      document.getElementById('host').innerHTML = '<form method="post" action="/TSPD/"><input type="hidden" name="_pd" value=""></form>';
+      return;
+    }
+    if (scenario === 'trlower') {
+      // Canlı sayfada gözlendi: toLowerCase Türkçe kurala göre değiştirilmiş ("I" → "ı").
+      String.prototype.toLowerCase = function () { return String.prototype.toLocaleLowerCase.call(this, 'tr-TR'); };
+    }
+
     var plain = scenario === 'divlabels';
+    var upper = scenario === 'trlower';
     var n = 0;
-    function row(id, label, extra, after) {
-      var realId = plain ? 'f' + (++n) : id;
-      var lbl = plain ? '<div class="lbl">' + label + '</div>' : '<label for="' + realId + '">' + label + '</label>';
-      return '<div class="row">' + lbl + '<div><input type="text" id="' + realId + '" ' + (plain ? '' : 'name="' + id + '" ') + (extra || '') + '>' + (after || '') + '</div></div>';
+    function row(id, label, extra, after, required) {
+      var realId = plain || upper ? 'f' + (++n) : id;
+      var text = upper ? label.toLocaleUpperCase('en-US').replace(/İ/g, 'I').replace(/[ĞÜŞÖÇ]/g, function (c) { return { 'Ğ': 'G', 'Ü': 'U', 'Ş': 'S', 'Ö': 'O', 'Ç': 'C' }[c]; }) : label;
+      var req = required ? '<span class="req">(*)</span>' : '';
+      var lbl = plain ? '<div class="lbl">' + text + req + '</div>' : '<div class="lblwrap"><label for="' + realId + '">' + text + '</label>' + req + '</div>';
+      return '<div class="row">' + lbl + '<div><input type="text" class="form-control ng-untouched ng-pristine ng-invalid" id="' + realId + '" ' + (extra || '') + '>' + (after || '') + '</div></div>';
     }
 
     function formHtml() {
-      var h = '<form id="dogrulaForm" action="javascript:void 0">';
+      var h = '<form novalidate method="get">';
       h += '<h3>T.C. KİMLİK NO DOĞRULAMA BİLGİLERİ</h3>';
-      h += '<a href="#" class="vk" id="lnkSanalKlavye" role="button" aria-pressed="' + (scenario === 'vkeyboard') + '">⌨ Sanal Klavye Kullan</a>';
+      h += '<div class="sanalKlavye' + (scenario === 'vkeyboard' ? ' active' : '') + '" placement="right" tooltip="Sanal Klavye Kullan" id="sk"><i class="material-icons">keyboard</i> <label>Sanal Klavye Kullan</label></div>';
       h += '<div class="keypad" id="keypad"><button type="button">1</button><button type="button">2</button><button type="button">3</button></div>';
       if (scenario === 'idonly') {
         h += '<input type="text" id="TCKimlikNo" maxlength="11"><input type="text" id="Ad"><input type="text" id="Soyad">' +
              '<input type="text" id="DogumGun" maxlength="2"><input type="text" id="DogumAy" maxlength="2"><input type="text" id="DogumYili" maxlength="4">';
       } else {
-        h += row('txtTc', 'T.C. Kimlik No', 'maxlength="11"');
-        h += row('txtAd', 'Adı', scenario === 'prefilled' ? 'value="ÖNCEDEN"' : '');
-        h += row('txtSoyad', 'Soyad', scenario === 'disabled' ? 'disabled' : '',
-          '<div class="hint"><label><input type="checkbox" id="chkSoyadYok"> Soyadı Nüfus Kayıtlarında Yok.</label></div>');
-        if (scenario === 'ambiguous') h += row('txtSoyad2', 'Soyad');
-        h += row('txtGun', 'Doğum Gün', 'maxlength="2"');
-        h += row('txtAy', 'Doğum Ay', 'maxlength="2"');
-        h += row('txtYil', 'Doğum Yılı', 'maxlength="4"');
-        h += '<h3>NÜFUS CÜZDANI DOĞRULAMA BİLGİLERİ</h3>' + row('txtCuzdanSeri', 'Seri No', 'placeholder="örn: A0123456"');
-        h += '<h3>TÜRKİYE CUMHURİYETİ KİMLİK KARTI</h3>' + row('txtKartSeri', 'Seri No', 'placeholder="örn: A01B23456"');
-        h += '<h3>TÜRKİYE CUMHURİYETİ GEÇİCİ KİMLİK BELGESİ</h3>' + row('txtGeciciNo', 'Geçici Kimlik Belge No', 'placeholder="örn: 123456"');
+        var ro = scenario === 'readonly' ? ' readonly' : '';
+        h += row('requestTCKimlikNo', 'T.C. Kimlik No', 'maxlength="11"' + ro, '', true);
+        h += row('requestAd', 'Adı', (scenario === 'prefilled' ? 'value="ÖNCEDEN"' : '') + ro, '', true);
+        h += row('requestSoyad', 'Soyad', (scenario === 'disabled' ? 'disabled' : '') + ro,
+          '<div class="hint"><input type="checkbox" id="chkSoyadYok"> <label for="chkSoyadYok">Soyadı Nüfus Kayıtlarında Yok.</label></div>', true);
+        if (scenario === 'ambiguous') h += row('requestSoyad2', 'Soyad');
+        h += row('requestDogumGun', 'Doğum Gün', 'maxlength="2"' + ro, '', true);
+        h += row('requestDogumAy', 'Doğum Ay', 'maxlength="2"' + ro, '', true);
+        h += row('requestDogumYil', 'Doğum Yılı', 'maxlength="4"' + ro, '', true);
+        h += '<h3>NÜFUS CÜZDANI DOĞRULAMA BİLGİLERİ</h3>' + row('requestCuzdanSeriNo', 'Seri No', 'placeholder="örn: A0123456"');
+        h += '<h3>TÜRKİYE CUMHURİYETİ KİMLİK KARTI</h3>' + row('requestTckkSeriNo', 'Seri No', 'placeholder="örn: A01B23456"');
+        h += '<h3>TÜRKİYE CUMHURİYETİ GEÇİCİ KİMLİK BELGESİ</h3>' + row('requestGeciciKimlikNo', 'Geçici Kimlik Belge No', 'placeholder="örn: 123456"');
       }
       h += '<div class="note">Cüzdan Seri ve No alanlarının doldurulması ile kişiye ait son aktif Nüfus Cüzdanı üzerinde yazan bilgilerin doğrulanması sağlanacaktır.</div>';
-      // reCAPTCHA yerine geçen yerel taklit (gerçekte google.com iframe'i).
-      h += '<div class="robot"><input type="checkbox" id="chkRobot" aria-label="Ben robot değilim"> Ben robot değilim</div>';
-      h += '<div><button type="submit" id="btnDogrula">Doğrula</button></div></form>';
+      // reCAPTCHA yerine geçen yerel taklit (gerçekte google.com iframe'i + gizli textarea).
+      h += '<div class="robot"><input type="checkbox" id="chkRobot" aria-label="Ben robot değilim"> Ben robot değilim' +
+           '<textarea id="g-recaptcha-response" name="g-recaptcha-response" class="g-recaptcha-response" style="display:none"></textarea></div>';
+      h += '<div><button type="submit" class="btn btn-info" id="btnDogrula">Doğrula</button></div></form>';
+      if (scenario === 'normal') h += '<iframe class="tspd" src="?scenario=tspd" title="tspd"></iframe>';
+      h += '<div class="cookies">Sizlere daha iyi hizmet verebilmek için sitemizde çerezlere yer veriyoruz. <button type="button" class="btnacceptcookies">Kabul et</button></div>';
       return h;
-    }
-
-    function applyVirtualKeyboard() {
-      var on = document.getElementById('lnkSanalKlavye').getAttribute('aria-pressed') === 'true';
-      document.getElementById('keypad').classList.toggle('on', on);
-      // Varsayım (doğrulanmadı): sanal klavye açıkken alanlar salt okunur olur.
-      document.querySelectorAll('#dogrulaForm input[type=text]').forEach(function (el) { el.readOnly = on; });
     }
 
     function mount() {
       document.getElementById('host').innerHTML = formHtml();
-      var f = document.getElementById('dogrulaForm');
+      var f = document.querySelector('form');
       f.addEventListener('submit', function (e) { e.preventDefault(); window.__submitted++; });
       document.getElementById('btnDogrula').addEventListener('click', function () { window.__submitted++; });
-      f.addEventListener('input', function (e) { window.__events.push('input:' + e.target.id); });
-      f.addEventListener('change', function (e) { window.__events.push('change:' + e.target.id); });
-      document.getElementById('lnkSanalKlavye').addEventListener('click', function (e) {
-        e.preventDefault();
-        this.setAttribute('aria-pressed', this.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
-        applyVirtualKeyboard();
+      // Angular DefaultValueAccessor taklidi: model "input" olayıyla güncellenir.
+      f.addEventListener('input', function (e) {
+        window.__events.push('input:' + e.target.id);
+        if (e.target.type === 'text') {
+          window.__model[e.target.id] = e.target.value;
+          e.target.classList.remove('ng-pristine'); e.target.classList.add('ng-dirty');
+        }
       });
-      applyVirtualKeyboard();
+      f.addEventListener('change', function (e) { window.__events.push('change:' + e.target.id); });
+      // Canlı sayfada gözlendiği gibi: tıklanınca yalnızca "active" sınıfı değişir, alanlar yazılabilir kalır.
+      document.getElementById('sk').addEventListener('click', function () {
+        this.classList.toggle('active');
+        document.getElementById('keypad').classList.toggle('on', this.classList.contains('active'));
+      });
       if (scenario === 'rejecting') {
         // Sayfa betiği değeri kabul etmiyor (ör. maskeleme) — doldurma "rejected" dönmeli.
-        document.getElementById('txtYil').addEventListener('input', function (e) { e.target.value = ''; });
+        document.getElementById('requestDogumYil').addEventListener('input', function (e) { e.target.value = ''; });
       }
     }
 

@@ -10,9 +10,9 @@
 (function (root) {
   'use strict';
 
-  const TR_MAP = { 'ı': 'i', 'İ': 'i', 'ş': 's', 'Ş': 's', 'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c' };
+  const TR_MAP = { 'I': 'i', 'ı': 'i', 'İ': 'i', 'ş': 's', 'Ş': 's', 'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c' };
   function norm(text) {
-    return String(text || '').replace(/[ıİşŞğĞüÜöÖçÇ]/g, (c) => TR_MAP[c]).toLowerCase().replace(/[^a-z0-9]/g, '');
+    return String(text || '').replace(/[IıİşŞğĞüÜöÖçÇ]/g, (c) => TR_MAP[c]).toLowerCase().replace(/[^a-z0-9]/g, '');
   }
 
   const LABELS = {
