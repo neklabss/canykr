@@ -231,7 +231,8 @@ büyük harfe çevrilmesi. Buna göre eklenti artık:
 - silindiyse ya da başka bir değere döndüyse bunu nedeniyle bildirir (`cleared` / `changed`;
   değer gösterilmez).
 
-Bu düzeltmenin canlıda doğrulanması gerekiyor. Açık kalan noktalar:
+Düzeltmeden sonra canlıda tekrar denendi (18.11.2026, sentetik veri, Doğrula'ya basılmadan):
+panel hatasız, sayfa ad/soyadı **büyük harfe çeviriyor** (gözlendi). Açık kalan noktalar:
 
 1. **Angular'ın değeri kabul etmesi.** Eklenti değeri yazıp `input` ve `change` olaylarını
    tetikliyor. Angular'ın `DefaultValueAccessor`'ı `input` olayını dinler; simülasyonda model
@@ -329,6 +330,14 @@ npm run check-dom -- nvi-bos-form.html
 Araç sayfa betiklerini çalıştırmaz ve ağa çıkmaz. Her alanın hangi input'a eşlendiğini yazar;
 altı alanın hepsi eşleşirse 0 ile çıkar. Bu dosyalar kişisel veri içermese de depoya
 **eklenmemelidir**.
+
+## Otomatik sorgu hakkında
+
+- **reCAPTCHA ("Ben robot değilim") otomatik çözülmez, atlatılmaz.** Sorguyu görevli başlatır.
+- NVİ'nin herkese açık `KPSPublic.asmx` doğrulama servisi **30.09.2025'te kapatıldı** (ikincil
+  kaynaklar; resmi duyuru bulunamadı). Otomatik ve yasal sorgunun yolu, kurumun **Kimlik Paylaşım
+  Sistemi (KPS)** üyeliği (başvuru: `kpsbasvuru.nvi.gov.tr`) ve sunucu tarafında KPS entegrasyonudur.
+  KPS erişimi olursa bu eklentiye gerek kalmaz. Koşullar başvurudan önce NVİ'den teyit edilmelidir.
 
 ## Henüz yapılmayanlar / kapsam dışı
 
