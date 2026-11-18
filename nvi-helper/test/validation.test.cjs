@@ -62,7 +62,8 @@ test('doğum yılı', () => {
 });
 
 test('tarih doğrulaması: takvim, artık yıl, gelecek', () => {
-  assert.deepEqual(V.validateDate('29.02.2024', NOW), { ok: true, value: '29.02.2024' });
+  assert.deepEqual(V.validateDate('29.02.2024', NOW), { ok: true, value: '29.02.2024', parts: { gun: '29', ay: '02', yil: '2024' } });
+  assert.equal(V.validateDate('5.3.1990', NOW).value, '05.03.1990', 'tek haneli gün/ay sıfırla tamamlanır');
   assert.equal(V.validateDate('29/02/2024', NOW).value, '29.02.2024', 'ayraç normalize edilir');
   assert.equal(V.validateDate('29.02.2023', NOW).code, 'date_invalid');
   assert.equal(V.validateDate('31.04.2000', NOW).code, 'date_invalid');
@@ -75,14 +76,37 @@ test('tarih doğrulaması: takvim, artık yıl, gelecek', () => {
   assert.equal(V.validateDate('', NOW).code, 'required');
 });
 
-test('validateAll normalize eder ve tüm hataları toplar', () => {
-  const ok = V.validateAll({ tckn: GOOD, ad: ' Ayşe ', soyad: 'Yılmaz', dogumYili: '1990' }, NOW);
+test('doğum tarihi: tam tarih ya da yalnızca yıl', () => {
+  assert.deepEqual(V.validateBirthDate('05.03.1990', NOW).parts, { gun: '05', ay: '03', yil: '1990' });
+  assert.deepEqual(V.validateBirthDate('1990', NOW).parts, { gun: '', ay: '', yil: '1990' });
+  assert.equal(V.validateBirthDate('2030', NOW).code, 'year_range');
+  assert.equal(V.validateBirthDate('90', NOW).code, 'birth_format');
+  assert.equal(V.validateBirthDate('03.1990', NOW).code, 'birth_format');
+  assert.equal(V.validateBirthDate('31.02.1990', NOW).code, 'date_invalid');
+  assert.equal(V.validateBirthDate('01.01.2030', NOW).code, 'date_future');
+  assert.equal(V.validateBirthDate('', NOW).code, 'required');
+});
+
+test('validateAll panel verisini sayfa alanlarına ayırır ve tüm hataları toplar', () => {
+  const ok = V.validateAll({ tckn: GOOD, ad: ' Ayşe ', soyad: 'Yılmaz', dogumTarihi: '5.3.1990' }, NOW);
   assert.equal(ok.ok, true);
-  assert.deepEqual(ok.normalized, { tckn: GOOD, ad: 'Ayşe', soyad: 'Yılmaz', dogumYili: '1990' });
-  const bad = V.validateAll({ tckn: '1', ad: '', soyad: 'X1', dogumYili: '3000' }, NOW);
+  assert.deepEqual(ok.normalized, { tckn: GOOD, ad: 'Ayşe', soyad: 'Yılmaz', dogumGun: '05', dogumAy: '03', dogumYili: '1990' });
+  const yearOnly = V.validateAll({ tckn: GOOD, ad: 'A', soyad: 'B', dogumTarihi: '1990' }, NOW);
+  assert.deepEqual([yearOnly.normalized.dogumGun, yearOnly.normalized.dogumAy, yearOnly.normalized.dogumYili], ['', '', '1990']);
+  const bad = V.validateAll({ tckn: '1', ad: '', soyad: 'X1', dogumTarihi: '3000' }, NOW);
   assert.equal(bad.ok, false);
-  assert.deepEqual(bad.errors, { tckn: 'tckn_format', ad: 'required', soyad: 'name_chars', dogumYili: 'year_range' });
+  assert.deepEqual(bad.errors, { tckn: 'tckn_format', ad: 'required', soyad: 'name_chars', dogumTarihi: 'year_range' });
   assert.equal(V.validateAll(undefined, NOW).ok, false);
+});
+
+test('validateAll service worker\'a giden ayrıştırılmış veriyi de doğrular', () => {
+  const ok = V.validateAll({ tckn: GOOD, ad: 'A', soyad: 'B', dogumGun: '05', dogumAy: '03', dogumYili: '1990' }, NOW);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.normalized.dogumAy, '03');
+  assert.equal(V.validateAll({ tckn: GOOD, ad: 'A', soyad: 'B', dogumGun: '', dogumAy: '', dogumYili: '1990' }, NOW).ok, true);
+  // Gün var ay yok gibi tutarsız parçalar reddedilir.
+  assert.equal(V.validateAll({ tckn: GOOD, ad: 'A', soyad: 'B', dogumGun: '05', dogumAy: '', dogumYili: '1990' }, NOW).errors.dogumTarihi, 'birth_format');
+  assert.equal(V.validateAll({ tckn: GOOD, ad: 'A', soyad: 'B', dogumGun: '31', dogumAy: '02', dogumYili: '1990' }, NOW).errors.dogumTarihi, 'date_invalid');
 });
 
 test('her hata kodunun Türkçe mesajı var', () => {

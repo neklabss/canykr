@@ -10,7 +10,7 @@
     .banner { background: #fff3cd; color: #3d2c00; border-bottom: 2px dashed #9a6700; padding: 10px 16px; font-weight: 700; }
     .layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; padding: 16px; }
     @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
-    iframe { width: 100%; min-height: 460px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+    iframe { width: 100%; min-height: 720px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
     select { font: inherit; padding: 6px; width: 100%; margin-bottom: 12px; }
     pre { white-space: pre-wrap; font-size: .8rem; }
   </style>
@@ -24,10 +24,11 @@
       <select id="scenario">
         <option value="normal">Normal form</option>
         <option value="prefilled">Ad alanı önceden dolu (korunmalı)</option>
+        <option value="divlabels">Etiketler bağlı değil (yakın metinden eşleştirme)</option>
         <option value="ambiguous">İki "Soyad" alanı (belirsiz → atlanmalı)</option>
         <option value="late">Alanlar 1,2 sn sonra yükleniyor</option>
         <option value="never">Alanlar hiç gelmiyor (zaman aşımı)</option>
-        <option value="vkeyboard">Sanal klavye açık (readonly)</option>
+        <option value="vkeyboard">Sanal klavye açık (varsayım: readonly)</option>
         <option value="disabled">Soyad alanı devre dışı</option>
         <option value="rejecting">Sayfa yıl değerini reddediyor</option>
         <option value="idonly">Etiketsiz, yalnızca id ile alanlar</option>
@@ -42,7 +43,7 @@
         <div class="field"><label for="tckn">T.C. Kimlik No</label><input id="tckn" inputmode="numeric" maxlength="11" aria-describedby="tckn-error"><p class="field-error" id="tckn-error" hidden></p></div>
         <div class="field"><label for="ad">Ad</label><input id="ad" maxlength="50" aria-describedby="ad-error"><p class="field-error" id="ad-error" hidden></p></div>
         <div class="field"><label for="soyad">Soyad</label><input id="soyad" maxlength="50" aria-describedby="soyad-error"><p class="field-error" id="soyad-error" hidden></p></div>
-        <div class="field"><label for="dogumYili">Doğum Yılı</label><input id="dogumYili" inputmode="numeric" maxlength="4" aria-describedby="dogumYili-error"><p class="field-error" id="dogumYili-error" hidden></p></div>
+        <div class="field"><label for="dogumTarihi">Doğum Tarihi</label><input id="dogumTarihi" inputmode="numeric" maxlength="10" aria-describedby="dogumTarihi-hint dogumTarihi-error"><p class="hint" id="dogumTarihi-hint">GG.AA.YYYY ya da yalnızca yıl</p><p class="field-error" id="dogumTarihi-error" hidden></p></div>
         <div class="actions">
           <button type="submit" id="fill-btn">Simülasyon formuna aktar</button>
           <button type="button" id="sample-btn" class="secondary">Sentetik örnek veri</button>

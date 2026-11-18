@@ -6,3 +6,4 @@ test-results/
 .env*
 nvi-*.html
 dist/
+nvi-inspect/

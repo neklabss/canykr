@@ -9,7 +9,9 @@
   const FIELDS = V.FIELDS;
   const IDLE_CLEAR_MS = 5 * 60 * 1000;
 
-  const FIELD_LABELS = { tckn: 'T.C. Kimlik No', ad: 'Ad', soyad: 'Soyad', dogumYili: 'Doğum Yılı' };
+  const FIELD_LABELS = { tckn: 'T.C. Kimlik No', ad: 'Ad', soyad: 'Soyad', dogumTarihi: 'Doğum Tarihi' };
+  // NVI sayfasındaki alanlar (sonuç listesi için).
+  const FILL_LABELS = { tckn: 'T.C. Kimlik No', ad: 'Adı', soyad: 'Soyad', dogumGun: 'Doğum Gün', dogumAy: 'Doğum Ay', dogumYili: 'Doğum Yılı' };
 
   const STATUS_TEXT = {
     filled: 'Dolduruldu',
@@ -21,7 +23,7 @@
     disabled: 'Alan devre dışı; elle girin',
     too_long: 'Değer alanın uzunluk sınırını aşıyor; atlandı',
     rejected: 'Sayfa değeri kabul etmedi; elle kontrol edin',
-    no_value: 'Değer yok',
+    no_value: 'Panelde değer yok; NVI sayfasında elle girin',
     error: 'Beklenmeyen hata'
   };
 
@@ -99,14 +101,14 @@
   function renderResults(result) {
     resultsEl.textContent = '';
     if (!result) return;
-    for (const f of FIELDS) {
+    for (const f of V.FILL_FIELDS) {
       const r = result.fields[f];
       if (!r) continue;
       const li = document.createElement('li');
       li.dataset.field = f;
       li.dataset.status = r.status;
       const name = document.createElement('span');
-      name.textContent = FIELD_LABELS[f] + ': ';
+      name.textContent = FILL_LABELS[f] + ': ';
       li.appendChild(name);
       li.appendChild(document.createTextNode(STATUS_TEXT[r.status] || r.status));
       resultsEl.appendChild(li);
@@ -139,7 +141,7 @@
     renderResults(null);
     const notes = [];
     if (parsed.warnings.includes('multiple_tckn')) notes.push('Metinde birden fazla geçerli T.C. Kimlik No var; numarayı elle girin.');
-    if (parsed.warnings.includes('multiple_years')) notes.push('Metinde birden fazla yıl var; doğum yılını elle girin.');
+    if (parsed.warnings.includes('multiple_years')) notes.push('Metinde birden fazla tarih veya yıl var; doğum tarihini elle girin.');
     if (!found.length) {
       setStatus(['Metinden alan çıkarılamadı.'].concat(notes).join(' '), 'warn');
       pasteText.focus();
@@ -168,7 +170,7 @@
     renderResults(result);
     const extra = result.virtualKeyboard ? ' Sanal klavye açık görünüyor; salt okunur alanları elle girin.' : '';
     if (result.ok) {
-      setStatus('Alanlar aktarıldı. Bu bir kimlik doğrulaması değildir: güvenlik kodunu girip sorguyu siz başlatın.' + extra, 'ok');
+      setStatus('Alanlar aktarıldı. Bu bir kimlik doğrulaması değildir: "Ben robot değilim" kutusunu işaretleyip Doğrula düğmesine siz basın.' + extra, 'ok');
       if (clearAfter.checked) clearInputs();
     } else if (result.filledCount > 0) {
       setStatus('Bazı alanlar aktarılamadı; aşağıdaki listeyi kontrol edip eksikleri elle tamamlayın.' + extra, 'warn');

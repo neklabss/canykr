@@ -8,7 +8,7 @@ const { checkDom, format } = require('../scripts/check-dom.cjs');
 test('check-dom: statik formda dört alan eşleşir, CAPTCHA eşleşmez', async () => {
   const html = fs.readFileSync(path.join(__dirname, 'fixtures/static-form.html'), 'utf8');
   const r = await checkDom(html);
-  for (const f of ['tckn', 'ad', 'soyad', 'dogumYili']) assert.equal(r.fields[f].status, 'matched', f);
+  for (const f of ['tckn', 'ad', 'soyad', 'dogumGun', 'dogumAy', 'dogumYili']) assert.equal(r.fields[f].status, 'matched', f);
   assert.equal(r.fields.tckn.element.name, 'TCKimlikNo');
   assert.equal(r.fields.ad.element.name, 'Ad');
   assert.ok(r.others.some((e) => e.name === 'Captcha'), 'CAPTCHA diğer alanlarda listelenir');

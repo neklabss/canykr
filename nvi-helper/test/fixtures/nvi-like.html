@@ -4,67 +4,86 @@
   <meta charset="utf-8">
   <title>SİMÜLASYON — NVI benzeri test formu</title>
   <style>
-    body { font: 15px/1.4 system-ui, sans-serif; margin: 16px; }
+    body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; color: #222; }
     .sim { background: #fff3cd; border: 2px dashed #9a6700; padding: 8px; margin-bottom: 12px; font-weight: 700; }
-    .row { margin: 8px 0; }
-    label { display: inline-block; min-width: 130px; }
+    h3 { color: #c0703a; font-size: 13px; text-decoration: underline; margin: 18px 0 6px; }
+    .row { display: flex; align-items: flex-start; margin: 6px 0; }
+    .row > .lbl, .row > label { flex: 0 0 220px; font-weight: 600; font-size: 12px; padding-top: 4px; }
+    .row input[type=text] { width: 260px; padding: 4px; }
+    .hint { font-size: 12px; margin-top: 2px; }
+    .note { background: #fdf6e3; padding: 8px; font-size: 12px; margin: 12px 0; }
+    .robot { display: inline-flex; gap: 8px; align-items: center; border: 1px solid #ccc; padding: 12px; margin: 10px 0; background: #f9f9f9; }
+    .vk { cursor: pointer; font-size: 12px; color: #555; }
     .keypad { display: none; gap: 4px; margin: 8px 0; }
     .keypad.on { display: flex; }
-    .captcha { display: inline-block; width: 120px; height: 36px; background: repeating-linear-gradient(45deg,#ccc,#ccc 6px,#eee 6px,#eee 12px); vertical-align: middle; }
   </style>
 </head>
 <body>
-  <div class="sim" role="note">SİMÜLASYON: Bu sayfa gerçek NVI sayfası değildir. Alan yapısı tahminidir ve canlı DOM ile doğrulanmamıştır.</div>
+  <div class="sim" role="note">SİMÜLASYON: Bu sayfa gerçek NVI sayfası değildir. Alan etiketleri ve sırası NVİ kullanıcı kılavuzundaki (2020) ekran görüntüsünden alınmıştır; HTML yapısı (id/name, etiket bağlantısı) tahminidir.</div>
   <div id="host"></div>
   <script>
   (function () {
-    // Senaryo: ?scenario=normal|prefilled|ambiguous|late|never|vkeyboard|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
+    // ?scenario=normal|divlabels|prefilled|ambiguous|late|never|vkeyboard|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
     var scenario = new URLSearchParams(location.search).get('scenario') || 'normal';
     window.__submitted = 0;
     window.__events = [];
 
-    function row(id, label, extra) {
-      return '<div class="row"><label for="' + id + '">' + label + '</label>' +
-        '<input type="text" id="' + id + '" name="' + id + '" ' + (extra || '') + '></div>';
+    // divlabels: etiketler <label for> ile BAĞLI DEĞİL; id'ler anlamsız (yakın metin sezgisi testi).
+    var plain = scenario === 'divlabels';
+    var n = 0;
+    function row(id, label, extra, after) {
+      var realId = plain ? 'f' + (++n) : id;
+      var lbl = plain ? '<div class="lbl">' + label + '</div>' : '<label for="' + realId + '">' + label + '</label>';
+      return '<div class="row">' + lbl + '<div><input type="text" id="' + realId + '" ' + (plain ? '' : 'name="' + id + '" ') + (extra || '') + '>' + (after || '') + '</div></div>';
     }
 
     function formHtml() {
       var h = '<form id="dogrulaForm" action="javascript:void 0">';
+      h += '<h3>T.C. KİMLİK NO DOĞRULAMA BİLGİLERİ</h3>';
+      h += '<a href="#" class="vk" id="lnkSanalKlavye" role="button" aria-pressed="' + (scenario === 'vkeyboard') + '">⌨ Sanal Klavye Kullan</a>';
+      h += '<div class="keypad" id="keypad"><button type="button">1</button><button type="button">2</button><button type="button">3</button></div>';
       if (scenario === 'idonly') {
-        // Etiketsiz, yalnızca id/name ile tanımlanan alanlar.
-        h += '<input type="text" id="TCKimlikNo" maxlength="11"><input type="text" id="Ad"><input type="text" id="Soyad"><input type="text" id="DogumYili" maxlength="4">';
+        h += '<input type="text" id="TCKimlikNo" maxlength="11"><input type="text" id="Ad"><input type="text" id="Soyad">' +
+             '<input type="text" id="DogumGun" maxlength="2"><input type="text" id="DogumAy" maxlength="2"><input type="text" id="DogumYili" maxlength="4">';
       } else {
         h += row('txtTc', 'T.C. Kimlik No', 'maxlength="11"');
-        h += row('txtAd', 'Ad', scenario === 'prefilled' ? 'value="ÖNCEDEN"' : '');
-        h += row('txtSoyad', 'Soyad', scenario === 'disabled' ? 'disabled' : '');
+        h += row('txtAd', 'Adı', scenario === 'prefilled' ? 'value="ÖNCEDEN"' : '');
+        h += row('txtSoyad', 'Soyad', scenario === 'disabled' ? 'disabled' : '',
+          '<div class="hint"><label><input type="checkbox" id="chkSoyadYok"> Soyadı Nüfus Kayıtlarında Yok.</label></div>');
         if (scenario === 'ambiguous') h += row('txtSoyad2', 'Soyad');
+        h += row('txtGun', 'Doğum Gün', 'maxlength="2"');
+        h += row('txtAy', 'Doğum Ay', 'maxlength="2"');
         h += row('txtYil', 'Doğum Yılı', 'maxlength="4"');
-        h += row('txtAnneAdi', 'Anne Adı');
+        h += '<h3>NÜFUS CÜZDANI DOĞRULAMA BİLGİLERİ</h3>' + row('txtCuzdanSeri', 'Seri No', 'placeholder="örn: A0123456"');
+        h += '<h3>TÜRKİYE CUMHURİYETİ KİMLİK KARTI</h3>' + row('txtKartSeri', 'Seri No', 'placeholder="örn: A01B23456"');
+        h += '<h3>TÜRKİYE CUMHURİYETİ GEÇİCİ KİMLİK BELGESİ</h3>' + row('txtGeciciNo', 'Geçici Kimlik Belge No', 'placeholder="örn: 123456"');
       }
-      h += '<div class="row"><label for="chkSanal">Sanal klavye kullan</label><input type="checkbox" id="chkSanal"' + (scenario === 'vkeyboard' ? ' checked' : '') + '></div>';
-      h += '<div class="keypad" id="keypad"><button type="button">1</button><button type="button">2</button><button type="button">3</button></div>';
-      h += '<div class="row"><span class="captcha" aria-hidden="true"></span> <label for="txtGuvenlik">Güvenlik Kodu</label><input type="text" id="txtGuvenlik" name="CaptchaCode"></div>';
-      h += '<input type="hidden" name="__RequestVerificationToken" value="sim">';
-      h += '<button type="submit" id="btnSorgula">Sorgula</button></form>';
+      h += '<div class="note">Cüzdan Seri ve No alanlarının doldurulması ile kişiye ait son aktif Nüfus Cüzdanı üzerinde yazan bilgilerin doğrulanması sağlanacaktır.</div>';
+      // reCAPTCHA yerine geçen yerel taklit (gerçekte google.com iframe'i).
+      h += '<div class="robot"><input type="checkbox" id="chkRobot" aria-label="Ben robot değilim"> Ben robot değilim</div>';
+      h += '<div><button type="submit" id="btnDogrula">Doğrula</button></div></form>';
       return h;
     }
 
     function applyVirtualKeyboard() {
-      var on = document.getElementById('chkSanal').checked;
+      var on = document.getElementById('lnkSanalKlavye').getAttribute('aria-pressed') === 'true';
       document.getElementById('keypad').classList.toggle('on', on);
-      document.querySelectorAll('#dogrulaForm input[type=text]').forEach(function (el) {
-        if (el.id !== 'txtGuvenlik') el.readOnly = on;
-      });
+      // Varsayım (doğrulanmadı): sanal klavye açıkken alanlar salt okunur olur.
+      document.querySelectorAll('#dogrulaForm input[type=text]').forEach(function (el) { el.readOnly = on; });
     }
 
     function mount() {
       document.getElementById('host').innerHTML = formHtml();
       var f = document.getElementById('dogrulaForm');
       f.addEventListener('submit', function (e) { e.preventDefault(); window.__submitted++; });
-      document.getElementById('btnSorgula').addEventListener('click', function () { window.__submitted++; });
+      document.getElementById('btnDogrula').addEventListener('click', function () { window.__submitted++; });
       f.addEventListener('input', function (e) { window.__events.push('input:' + e.target.id); });
       f.addEventListener('change', function (e) { window.__events.push('change:' + e.target.id); });
-      document.getElementById('chkSanal').addEventListener('change', applyVirtualKeyboard);
+      document.getElementById('lnkSanalKlavye').addEventListener('click', function (e) {
+        e.preventDefault();
+        this.setAttribute('aria-pressed', this.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        applyVirtualKeyboard();
+      });
       applyVirtualKeyboard();
       if (scenario === 'rejecting') {
         // Sayfa betiği değeri kabul etmiyor (ör. maskeleme) — doldurma "rejected" dönmeli.
@@ -74,9 +93,7 @@
 
     if (scenario === 'noform') return;
     if (scenario === 'iframe' || scenario === 'twoframes' || scenario === 'iframe-foreign') {
-      // Form bir iframe içinde (aynı host). twoframes: iki ayrı form → belirsiz.
-      // iframe-foreign: ek olarak NVI dışı bir iframe (eklentinin izni yok).
-      var frame = function (src) { return '<iframe src="' + src + '" title="Form çerçevesi" style="width:100%;height:330px;border:1px solid #999"></iframe>'; };
+      var frame = function (src) { return '<iframe src="' + src + '" title="Form çerçevesi" style="width:100%;height:520px;border:1px solid #999"></iframe>'; };
       var html = frame('?scenario=normal');
       if (scenario === 'twoframes') html += frame('?scenario=normal&ikinci=1');
       if (scenario === 'iframe-foreign') html = frame('https://example.invalid/reklam') + html;

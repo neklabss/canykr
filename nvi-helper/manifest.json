@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "NVI Form Yardımcısı",
-  "version": "0.5.0",
-  "description": "Müşteri bilgilerini NVI T.C. Kimlik No Doğrulama formuna aktarır. Yalnızca doldurur; güvenlik kodu ve sorgu görevliye aittir.",
+  "version": "0.6.0",
+  "description": "Müşteri bilgilerini NVI T.C. Kimlik No Doğrulama formuna aktarır. Yalnızca doldurur; \"Ben robot değilim\" ve Doğrula görevliye aittir.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",

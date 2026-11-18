@@ -11,13 +11,42 @@ Doğrulama** formuna aktarmasını sağlar.
 
 | Yapar | Yapmaz |
 | --- | --- |
-| T.C. Kimlik No, Ad, Soyad ve Doğum Yılı alanlarını doldurur | Güvenlik kodunu (CAPTCHA) çözmez, atlatmaz, alanına dokunmaz |
+| T.C. Kimlik No, Adı, Soyad, Doğum Gün, Doğum Ay ve Doğum Yılı alanlarını doldurur | "Ben robot değilim" (reCAPTCHA) kutusuna dokunmaz, çözmez, atlatmaz |
+| Nüfus cüzdanı / kimlik kartı / geçici belge seri no alanlarına ve "Soyadı Nüfus Kayıtlarında Yok" kutusuna dokunmaz | |
 | Dolu alanların değerini korur | Sorguyu başlatmaz, formu göndermez |
 | Belirsiz alanları atlar ve bunu bildirir | Sonuç okumaz, otomatik karar vermez |
 | readonly alanları (sanal klavye) bildirir | readonly / disabled durumunu zorla kaldırmaz |
 | Kontrol basamağı ve biçim hatalarını yakalar | **Kimlik doğrulaması yapmaz.** "Dolduruldu" demek "kişi doğrulandı" demek değildir |
 
-Güvenlik kodunu girip **Sorgula**'ya basmak ve sonucu NVI sayfasından okumak görevliye aittir.
+**"Ben robot değilim"** kutusunu işaretlemek, **Doğrula**'ya basmak ve sonucu NVI sayfasından
+okumak görevliye aittir.
+
+## Gerçek sayfa hakkında bilinenler (araştırma, Kasım 2026)
+
+Canlı sayfa bu geliştirme ortamından açılamadı: hem `curl` hem Playwright ile açılan Chromium,
+sunucunun bağlantıyı yanıtsız kesmesiyle karşılaştı (büyük olasılıkla yurt dışı/veri merkezi
+IP'leri engelleniyor). Dış bir getirme aracıyla sayfa HTTP 200 döndü, ancak içerik yalnızca
+çerez bandıydı. Bu da formun **tarayıcıda JavaScript ile oluşturulduğunu** gösteriyor. Eklentinin
+geç yüklenen alanları beklemesi bu yüzden önemli.
+
+Aşağıdakiler NVİ'nin resmi **tckimlik.nvi.gov.tr Kullanıcı Kılavuzu**'ndan
+(`https://tckimlik.nvi.gov.tr/Pages/Help/TCKIMLIK_KULLANICI_KILAVUZU.pdf`, 18.08.2020,
+bölüm 1.2.1) ve içindeki ekran görüntüsünden alındı:
+
+| Bilgi | Kaynaktaki hali | Eklentide |
+| --- | --- | --- |
+| Sayfa yolu | `/Modul/TcKimlikNoDogrula` (sayfa başlığı "T.C. Kimlik No Doğrulama - Nüfus ve Vatandaşlık İşleri Genel Müdürlüğü", arama dizini) | `src/nvi-url.js` |
+| Zorunlu bölüm | T.C. Kimlik No, **Adı**, Soyad, **Doğum Gün**, **Doğum Ay**, **Doğum Yılı** (ayrı alanlar, bu sırayla) | Altı alan da eşleştirilir |
+| Soyad altı | "Soyadı Nüfus Kayıtlarında Yok." onay kutusu | Dokunulmaz |
+| İsteğe bağlı belge alanları | Nüfus Cüzdanı Seri No (örn: A0123456), T.C. Kimlik Kartı Seri No (örn: A01B23456), Geçici Kimlik Belge No (örn: 123456). Doldurulmazsa kütükteki son "Açık" kayıt doğrulanır | Dokunulmaz |
+| Güvenlik | "Ben robot değilim" (Google reCAPTCHA), ardından **Doğrula** düğmesi | Dokunulmaz; reCAPTCHA iframe'ine izin yok |
+| Sanal klavye | "Sanal Klavye Kullan" seçeneği; "alanlara gelindikçe ekranın altında beliren sanal klavye ile veri girişi" | Algılanır (bkz. doğrulanmayanlar) |
+| Hata durumları | Zorunlu alan boş, yanlış biçim, kayıt bulunamadı → sistem uyarı mesajı | Sonuç okunmaz |
+
+Kılavuz 2020 tarihli. Görsel tasarım, HTML `id`/`name` değerleri ve etiketlerin `<label>` ile
+bağlı olup olmadığı **hâlâ doğrulanmadı**. Bunları doğrulamak için aşağıdaki
+[Canlı sayfayı Playwright ile inceleme](#canlı-sayfayı-playwright-ile-inceleme-kendi-bilgisayarınızda)
+adımlarına bakın.
 
 ## Kurulum (geliştirici modu)
 
@@ -38,14 +67,18 @@ politikası veya mağaza) için ayrıca imzalı paket ve barındırma kararı ge
 1. NVI'de T.C. Kimlik No Doğrulama sayfasını açın. Panelin üstündeki gösterge etkin sekmenin
    doğru sayfa olup olmadığını söyler (yalnızca bilgi amaçlıdır; asıl kontrol aktarım anında
    service worker'da yapılır).
-2. Yan panelde dört alanı doldurun **ya da** müşteri bilgisini (mesaj, e-posta, tablo satırı)
+2. Yan panelde T.C. Kimlik No, Ad, Soyad ve **Doğum Tarihi**'ni (GG.AA.YYYY) doldurun **ya da** müşteri bilgisini (mesaj, e-posta, tablo satırı)
    **Yapıştırarak doldur** kutusuna yapıştırıp **Alanlara dağıt**'a (veya Ctrl+Enter) basın.
    Etiketsiz metinden tahmin edilen alanlar kesikli çerçeveyle işaretlenir; kontrol edin.
    Yapıştırılan ham metin ayrıştırıldıktan hemen sonra silinir. Yapıştırma NVI formuna
    **yazmaz**, yalnızca panel alanlarını doldurur.
 3. **NVI formuna aktar**'a basın.
 4. Paneldeki alan listesinde her alanın durumunu kontrol edin (Dolduruldu / Korundu / Belirsiz / Salt okunur …).
-5. Güvenlik kodunu girip sorguyu kendiniz başlatın.
+5. "Ben robot değilim" kutusunu işaretleyip **Doğrula**'ya kendiniz basın.
+
+Doğum tarihi tam girilirse gün, ay ve yıl ayrı alanlara yazılır. Yalnızca yıl girilirse yalnızca
+Doğum Yılı doldurulur. Gün ve ay için panel "elle girin" der ve sonuç "bazı alanlar aktarılamadı"
+olur.
 
 Sayfa henüz yükleniyorsa veri en fazla **2 dakika** bekletilir ve sayfa yüklenince doldurulur.
 
@@ -55,10 +88,12 @@ Sayfa henüz yükleniyorsa veri en fazla **2 dakika** bekletilir ve sayfa yükle
 src/panel.html|js|css   Yan panel (erişilebilir form, hata özeti, canlı durum bölgesi)
 src/background.js       Service worker: yeniden doğrulama, URL kontrolü, enjeksiyon, bekleyen kayıtlar
 src/filler.js           Alan eşleştirme ve doldurma (sayfaya istek anında enjekte edilir)
-src/validation.js       Biçim kontrolleri (kontrol basamağı, ad, yıl, tarih)
+src/validation.js       Biçim kontrolleri (kontrol basamağı, ad, doğum tarihi → gün/ay/yıl)
 src/nvi-url.js          NVI adres sınıflandırması (service worker ve panel göstergesi)
 src/paste-parser.js     Yapıştırılan serbest metinden alan ayrıştırma (yalnızca panelde)
 src/session-store.js    Sekmeye bağlı, TTL'li bekleyen kayıtlar (chrome.storage.session)
+scripts/inspect-live.cjs  Canlı sayfanın boş formunu Playwright ile salt okunur inceleme
+scripts/check-dom.cjs     Kaydedilmiş boş form HTML'inde eşleştirme raporu
 demo/                   Yerel demo (SİMÜLASYON)
 test/                   Birim, tarayıcı ve uçtan uca testler
 ```
@@ -73,10 +108,17 @@ sekmeye enjekte eder → sonuç (yalnızca durum kodları, kişisel veri yok) pa
 - Adaylar görünür `text/tel/number/search` input'larıdır. Etiket (`label[for]`, sarmalayan
   `label`, `aria-labelledby`), `id`, `name`, `placeholder`, `aria-label`, `title`
   Türkçe karakterlerden arındırılıp normalize edilir.
-- Birebir eşleşme 3 puan, içerme 1 puandır; dışlama kelimeleri (ör. "Anne Adı", "Soyad"
-  için "Ad") puanı sıfırlar. En yüksek puan birden fazla alandaysa alan **belirsiz** sayılır
+- Bağlı etiket yoksa alanın (en fazla 4 üst öğe yukarıya kadar) **önündeki metin** etiket sayılır
+  (ör. `<div>Doğum Ay</div><div><input></div>`). Aradaki öğe başka bir alan içeriyorsa o metin ona
+  aittir. Kılavuzdaki düzen tablo/sütun biçiminde olduğu için bu yedek eklendi.
+- Bağlı etiket ya da özellik birebir eşleşirse 3 puan, yakın metin birebir eşleşirse 2 puan,
+  içerme 1 puan alınır. Dışlama kelimeleri (ör. "Soyad" için "Ad", "Doğum Yılı" için "Gün/Ay")
+  puanı sıfırlar. En yüksek puan birden fazla alandaysa alan **belirsiz** sayılır
   ve atlanır. Aynı input iki alana eşleşirse ikisi de belirsiz olur.
 - "güvenlik", "captcha", "kod", "şifre" gibi kelimeleri taşıyan alanlar hiçbir koşulda doldurulmaz.
+  Onay kutuları ("Soyadı yok", "Ben robot değilim") ve "Seri No" alanları aday değildir.
+- Gün ve ay iki haneli yazılır (`05`, `03`). Sayfanın tek haneli değer bekleyip beklemediği
+  doğrulanmadı.
 - Değer, sayfanın kendi `value` setter'ı ile yazılır, `input` ve `change` olayları tetiklenir;
   sonra değerin gerçekten kaldığı kontrol edilir (kalmadıysa `rejected`).
 - Alanlar geç yüklenirse 8 saniyeye kadar beklenir (service worker sayfayı ~400 ms aralıkla yoklar).
@@ -91,7 +133,9 @@ sekmeye enjekte eder → sonuç (yalnızca durum kodları, kişisel veri yok) pa
   kopyalama) → etiketsiz tahmin. Etiketli değer her zaman tahmine üstün gelir.
 - T.C. Kimlik No yalnızca kontrol basamakları tutan 11 haneli sayıdan alınır (telefon numarası
   vb. elenir). Birden fazla geçerli numara veya yıl varsa alan boş bırakılır ve uyarılır.
-- Doğum tarihi verilirse yalnızca yılı alınır; gelecekteki ve 1900 öncesi yıllar reddedilir.
+- Doğum tarihi bulunursa `GG.AA.YYYY` olarak alınır; yalnızca yıl varsa yıl alınır. Takvimde
+  olmayan, gelecekteki ve 1900 öncesi tarihler reddedilir. Birden fazla tarih ya da yıl varsa
+  alan boş bırakılır.
 - "Ad Soyad" tek alandaysa son kelime soyad sayılır; üç ve daha fazla kelimede bu bir tahmindir
   ve işaretlenir. Parantez içi notlar ve rakamlar addan temizlenir.
 
@@ -117,9 +161,10 @@ npm run demo
 ```
 
 `http://127.0.0.1:8765/` adresini açın. Sağdaki form **gerçek NVI sayfası değildir**;
-alan yapısı tahminidir. Senaryolar: normal, önceden dolu alan, belirsiz alan, geç yüklenen
-alanlar, hiç gelmeyen alanlar, sanal klavye (readonly), devre dışı alan, değeri reddeden
-sayfa, yalnızca id'li alanlar, form yok. **Sentetik örnek veri** düğmesi kontrol basamağı
+alan etiketleri ve sırası resmi kılavuzdaki ekran görüntüsünden alınmıştır, HTML yapısı
+tahminidir. Senaryolar: normal, `<label>` ile bağlı olmayan etiketler, önceden dolu alan,
+belirsiz alan, geç yüklenen alanlar, hiç gelmeyen alanlar, sanal klavye (varsayım: readonly),
+devre dışı alan, değeri reddeden sayfa, yalnızca id'li alanlar, form yok. **Sentetik örnek veri** düğmesi kontrol basamağı
 tutan rastgele bir numara üretir; gerçek kişi bilgisi girmeyin.
 
 ## Testler
@@ -145,10 +190,13 @@ CI: `.github/workflows/nvi-helper.yml`, `nvi-helper/` değiştiğinde aynı test
   kontrol basamağı tutmayan sayıların reddi, birden fazla aday olduğunda alanı boş bırakma.
 - `test/pack.test.cjs` — paket içeriği, manifest/panel başvurularının pakette olması, zip'in
   bağımsız bir okuyucuyla (Python `zipfile`) doğrulanması, tekrarlanabilirlik.
-- `test/filler.browser.test.cjs` — simülasyon formunda doldurma, değer koruma, belirsiz alan,
-  geç yükleme, zaman aşımı, readonly/sanal klavye, disabled, reddedilen değer, CAPTCHA'ya ve
-  gönder düğmesine dokunulmaması, sonuçta kişisel veri olmaması, demo sayfası.
+- `test/filler.browser.test.cjs` — kılavuzdaki düzende altı alanın doldurulması, bağlı olmayan
+  etiketler, yalnızca yıl, değer koruma, belirsiz alan, geç yükleme, zaman aşımı, readonly/sanal
+  klavye, disabled, reddedilen değer, belge alanlarına, onay kutularına ve Doğrula'ya
+  dokunulmaması, sonuçta kişisel veri olmaması, demo sayfası.
 - `test/check-dom.test.cjs` — kaydedilmiş form HTML'ini raporlayan aracın testi.
+- `test/inspect-live.test.cjs` — canlı inceleme betiğinde tıklama/yazma/gönderme API'si
+  bulunmadığının denetimi, adres kısıtı ve betiğin yerel simülasyon üzerinde çalışması.
 - `test/extension.e2e.test.cjs` — eklenti gerçek Chromium'a yüklenir; `tckimlik.nvi.gov.tr`
   istekleri yerel simülasyon sayfasına yönlendirilir (gerçek NVI'ye istek gitmez, dış ağ
   istekleri engellenir ve test bunu doğrular). Kapsam: panelden aktarım, panel doğrulaması ve
@@ -163,26 +211,52 @@ elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 
 ## Canlı ortamda henüz doğrulanmayanlar
 
-1. **Gerçek DOM ve seçiciler.** Canlı sayfa bu ortamdan erişilemedi. Alan adları kamuya açık
-   kaynaklardan (NVI SOAP servisi: `TCKimlikNo`, `Ad`, `Soyad`, `DogumYili`) çıkarıldı;
-   etiket metinleri tahmindir.
-2. **Modül yolu** `/Modul/TcKimlikNoDogrula` topluluk kaynaklarından alındı (`src/nvi-url.js`
-   içindeki `NVI_MODULE_PATH`). Yol farklıysa eklenti "Doğrulama modülü değil" der.
-3. **Sanal klavye davranışı.** Alanları readonly yaptığı varsayıldı; gerçekte farklı olabilir
-   (ör. alanlar gizlenip yerine başka öğe konabilir).
-4. **Sayfanın kendi betikleri** `input`/`change` olaylarını farklı işleyebilir (maskeleme,
-   blur doğrulaması). Değer kalmazsa `rejected` bildirilir ama gerçek davranış gözlenmedi.
-5. **iframe.** Form NVI host'undaki bir iframe içindeyse desteklenir; başka bir alan adından
+1. **HTML yapısı.** Alan etiketleri ve sırası resmi kılavuzdan alındı. `id`/`name` değerleri,
+   etiketlerin bağlı olup olmadığı ve 2020'den sonra tasarımın değişip değişmediği bilinmiyor.
+2. **Sanal klavye.** Kılavuz klavyenin "alanlara gelindikçe" belirdiğini söylüyor. Alanları
+   salt okunur yapıp yapmadığı ve seçeneğin onay kutusu mu bağlantı mı olduğu bilinmiyor.
+   Eklenti iki biçimi de algılar; salt okunur alanı zorla değiştirmez.
+3. **Gün/ay biçimi.** Gün ve ay `05` gibi iki haneli yazılıyor; sayfa `5` bekliyor olabilir.
+4. **Sayfanın kendi betikleri.** Form JavaScript ile oluşturuluyor. `input`/`change` olaylarının
+   sayfanın çatısı (React/Angular/jQuery vb.) tarafından kabul edildiği doğrulanmadı. Değer
+   kalmazsa `rejected` bildirilir.
+5. **iframe.** Form NVI host'undaki bir iframe içindeyse desteklenir. Başka bir alan adından
    yüklenen iframe'deyse eklentinin izni olmadığı için doldurulamaz (bilerek).
-6. Ad/soyad için büyük harf veya Türkçe yerel ayar dönüşümü gerekip gerekmediği bilinmiyor;
-   değerler yazıldığı gibi aktarılır.
+6. Ad/soyadın büyük harfe çevrilmesi gerekip gerekmediği bilinmiyor; değerler yazıldığı gibi
+   aktarılır.
 
-### Canlı DOM nasıl incelenir (kişisel veri girmeden)
+### Canlı sayfayı Playwright ile inceleme (kendi bilgisayarınızda)
 
-Yetkili bir bilgisayarda NVI sayfasını açın. **Hiçbir alana veri girmeden** geliştirici
-araçları konsolunda aşağıdakini çalıştırın. Sayfanın bir kopyasını alır; kopyadaki değerleri,
-gizli alanları (ör. güvenlik belirteci), görselleri (CAPTCHA) ve betikleri temizler ve panoya
-kopyalar:
+NVI'ye erişebilen (Türkiye'deki, yetkili) bir bilgisayarda:
+
+```bash
+cd nvi-helper
+npm install --no-save playwright@1.63.0
+npx playwright install chromium
+npm run inspect-live -- --sanal-klavye
+```
+
+Betik (`scripts/inspect-live.cjs`):
+
+- Gerçek bir Chromium penceresinde yalnızca T.C. Kimlik No Doğrulama sayfasını açar ve formun
+  JavaScript ile oluşmasını bekler.
+- Her çerçevede alanların yapısını (id/name/etiket/readonly/maxlength), düğmeleri, sanal klavye
+  öğelerini ve eklentinin hangi alanı hangi input'a eşleyeceğini **salt okunur** raporlar.
+- **Hiçbir alana yazmaz, hiçbir öğeye tıklamaz, "Ben robot değilim"e ve Doğrula'ya dokunmaz.**
+  Bu, testle denetlenir.
+- `--sanal-klavye` ile ilk rapordan sonra durur. "Sanal Klavye Kullan"a **siz** tıklarsınız,
+  isterseniz bir alana tıklayıp klavyenin çıktığını görürsünüz (veri girmeyin), Enter'a
+  basınca ikinci rapor alınır.
+- Çıktılar `nvi-inspect/` klasörüne yazılır (`.gitignore`'da): `inspect-report.json` ve değerleri,
+  gizli alanları, görselleri ve betikleri temizlenmiş `nvi-bos-form.html` /
+  `nvi-sanal-klavye.html`. Raporda değer yoktur; yalnızca "alan dolu mu" bilgisi vardır.
+
+`inspect-report.json` dosyasını paylaşmanız yeterli. Ona göre `FIELD_RULES`, simülasyon formu ve
+"doğrulanmayanlar" listesi güncellenir.
+
+Playwright kuramıyorsanız aynı bilgiyi elle de alabilirsiniz. Sayfayı açın, **hiçbir alana veri
+girmeden** geliştirici araçları konsolunda aşağıdakini çalıştırın. Bu komut sayfanın temizlenmiş
+bir kopyasını panoya alır:
 
 ```js
 (() => {
@@ -197,18 +271,15 @@ kopyalar:
 })();
 ```
 
-Panodaki içeriği `nvi-bos-form.html` olarak kaydedin. Sanal klavye seçeneğini işaretleyip aynı
-komutla `nvi-sanal-klavye.html` dosyasını da kaydedin. Form bir iframe içindeyse konsolun üst
-kısmındaki bağlam seçiciden o çerçeveyi seçip tekrar çalıştırın. Sonra:
+Panodaki içeriği `nvi-bos-form.html` olarak kaydedip şunu çalıştırın:
 
 ```bash
 npm run check-dom -- nvi-bos-form.html
 ```
 
-Araç sayfa betiklerini çalıştırmadan ve ağa çıkmadan her alanın hangi input'a eşlendiğini,
-eşleşmeyen alanları ve readonly/maxlength bilgisini yazar; dört alan da eşleşirse 0 ile çıkar.
-Dosyalarda değer varsa uyarır. Bu dosyalar kişisel veri içermese de depoya **eklenmemelidir**;
-paylaşılırsa `FIELD_RULES` ve simülasyon formu gerçek yapıya göre güncellenir.
+Araç sayfa betiklerini çalıştırmaz ve ağa çıkmaz. Her alanın hangi input'a eşlendiğini yazar;
+altı alanın hepsi eşleşirse 0 ile çıkar. Bu dosyalar kişisel veri içermese de depoya
+**eklenmemelidir**.
 
 ## Henüz yapılmayanlar / kapsam dışı
 

@@ -20,7 +20,8 @@
     date_format: 'Tarih GG.AA.YYYY biçiminde olmalıdır.',
     date_invalid: 'Takvimde böyle bir tarih yok.',
     date_future: 'Tarih gelecekte olamaz.',
-    date_range: 'Tarih 1900 yılından önce olamaz.'
+    date_range: 'Tarih 1900 yılından önce olamaz.',
+    birth_format: 'Doğum tarihini GG.AA.YYYY biçiminde (ör. 05.03.1990) ya da yalnızca yıl olarak girin.'
   };
 
   function onlyDigits(s) {
@@ -66,12 +67,13 @@
     return { ok: true, value };
   }
 
-  // GG.AA.YYYY (ayraç olarak . / - kabul edilir). Panel şu an yalnızca yıl ister;
-  // tarih kontrolü ileride tam doğum tarihi isteyen formlar için hazır tutulur.
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  // GG.AA.YYYY (ayraç olarak . / - kabul edilir; gün ve ay tek haneli olabilir).
   function validateDate(input, now) {
     const value = String(input == null ? '' : input).trim();
     if (!value) return { ok: false, code: 'required' };
-    const m = /^(\d{2})[./-](\d{2})[./-](\d{4})$/.exec(value);
+    const m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(value);
     if (!m) return { ok: false, code: 'date_format' };
     const day = Number(m[1]);
     const month = Number(m[2]);
@@ -84,24 +86,51 @@
     const n = now || new Date();
     const today = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
     if (date.getTime() > today) return { ok: false, code: 'date_future' };
-    return { ok: true, value: m[1] + '.' + m[2] + '.' + m[3] };
+    return { ok: true, value: pad2(day) + '.' + pad2(month) + '.' + m[3], parts: { gun: pad2(day), ay: pad2(month), yil: m[3] } };
   }
 
-  const FIELDS = ['tckn', 'ad', 'soyad', 'dogumYili'];
+  // NVI formu doğum gününü, ayını ve yılını ayrı alanlarda ister. Görevli tam tarihi
+  // (GG.AA.YYYY) ya da yalnızca yılı girebilir; yalnızca yıl girilirse gün ve ay
+  // NVI sayfasında elle tamamlanır.
+  function validateBirthDate(input, now) {
+    const value = String(input == null ? '' : input).trim();
+    if (!value) return { ok: false, code: 'required' };
+    if (/^\d{4}$/.test(value)) {
+      const y = validateBirthYear(value, now);
+      return y.ok ? { ok: true, value, parts: { gun: '', ay: '', yil: value } } : y;
+    }
+    if (!/^\d{1,2}[./-]\d{1,2}[./-]\d{4}$/.test(value)) return { ok: false, code: 'birth_format' };
+    return validateDate(value, now);
+  }
 
+  // Panel alanları. Doldurulacak sayfa alanları: tckn, ad, soyad, dogumGun, dogumAy, dogumYili.
+  const FIELDS = ['tckn', 'ad', 'soyad', 'dogumTarihi'];
+  const FILL_FIELDS = ['tckn', 'ad', 'soyad', 'dogumGun', 'dogumAy', 'dogumYili'];
+
+  // Panel verisini ({ ..., dogumTarihi }) ya da service worker'a giden ayrıştırılmış
+  // veriyi ({ ..., dogumGun, dogumAy, dogumYili }) doğrular; her ikisinde de
+  // normalized, FILL_FIELDS biçimindedir. Hata anahtarı panel alanı (dogumTarihi) olur.
   function validateAll(data, now) {
     const src = data || {};
+    let birth = src.dogumTarihi;
+    if (birth === undefined && src.dogumYili !== undefined) {
+      birth = src.dogumGun || src.dogumAy ? `${src.dogumGun || ''}.${src.dogumAy || ''}.${src.dogumYili}` : src.dogumYili;
+    }
     const checks = {
       tckn: validateTckn(src.tckn),
       ad: validateName(src.ad),
       soyad: validateName(src.soyad),
-      dogumYili: validateBirthYear(src.dogumYili, now)
+      dogumTarihi: validateBirthDate(birth, now)
     };
     const errors = {};
     const normalized = {};
     for (const f of FIELDS) {
-      if (checks[f].ok) normalized[f] = checks[f].value;
-      else errors[f] = checks[f].code;
+      if (!checks[f].ok) { errors[f] = checks[f].code; continue; }
+      if (f === 'dogumTarihi') {
+        normalized.dogumGun = checks[f].parts.gun;
+        normalized.dogumAy = checks[f].parts.ay;
+        normalized.dogumYili = checks[f].parts.yil;
+      } else normalized[f] = checks[f].value;
     }
     return { ok: Object.keys(errors).length === 0, errors, normalized };
   }
@@ -110,7 +139,7 @@
     return MESSAGES[code] || 'Geçersiz değer.';
   }
 
-  const api = { validateTckn, validateName, normalizeName, validateBirthYear, validateDate, validateAll, message, FIELDS, MESSAGES };
+  const api = { validateTckn, validateName, normalizeName, validateBirthYear, validateDate, validateBirthDate, validateAll, message, FIELDS, FILL_FIELDS, MESSAGES };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.NviValidation = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
