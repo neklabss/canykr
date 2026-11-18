@@ -103,10 +103,10 @@ test('yüklü NVI sayfası: panelden aktarım, form gönderilmez, veri saklanmaz
   const status = await waitStatus(/aktarıldı/);
   assert.match(status, /kimlik doğrulaması değildir/);
   const st = await pageValues(page);
-  assert.equal(st.values.txtTc, DATA.tckn);
-  assert.equal(st.values.txtSoyad, 'KULLANICI');
-  assert.deepEqual([st.values.txtGun, st.values.txtAy, st.values.txtYil], ['05', '03', '1990'], 'doğum tarihi üç alana bölünür');
-  assert.equal(st.values.txtCuzdanSeri, '', 'isteğe bağlı belge alanı boş');
+  assert.equal(st.values.requestTCKimlikNo, DATA.tckn);
+  assert.equal(st.values.requestSoyad, 'KULLANICI');
+  assert.deepEqual([st.values.requestDogumGun, st.values.requestDogumAy, st.values.requestDogumYil], ['05', '03', '1990'], 'doğum tarihi üç alana bölünür');
+  assert.equal(st.values.requestCuzdanSeriNo, '', 'isteğe bağlı belge alanı boş');
   assert.equal(st.robot, false, '"Ben robot değilim" kutusuna dokunulmaz');
   assert.equal(st.submitted, 0, 'sorgu otomatik başlatılmaz');
   assert.equal(await panel.inputValue('#tckn'), '', 'panel aktarımdan sonra temizlendi');
@@ -128,7 +128,7 @@ test('panel doğrulaması: hatalı veride mesaj gönderilmez, erişilebilir hata
   assert.equal(await panel.isVisible('#error-summary'), true);
   assert.equal(await panel.evaluate(() => document.activeElement.id), 'error-summary', 'odak hata özetine taşınır');
   assert.match(await panel.innerText('#tckn-error'), /kontrol basamakları/);
-  assert.equal((await pageValues(page)).values.txtTc, '', 'NVI formuna dokunulmadı');
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, '', 'NVI formuna dokunulmadı');
   // Hata özetindeki bağlantı ilgili alana odaklar.
   await panel.click('#error-list a >> nth=0');
   assert.equal(await panel.evaluate(() => document.activeElement.id), 'tckn');
@@ -148,7 +148,7 @@ test('NVI olmayan sekme ve yanlış NVI modülü reddedilir', async () => {
   await typeData();
   await panel.click('#fill-btn');
   await waitStatus(/Doğrulama modülü değil/);
-  assert.equal((await pageValues(wrong.page)).values.txtTc, '');
+  assert.equal((await pageValues(wrong.page)).values.requestTCKimlikNo, '');
   await wrong.page.close();
 });
 
@@ -159,7 +159,7 @@ test('sekme yüklenirken gönderilen veri bekletilir, yüklenince doldurulur ve 
   await panel.click('#fill-btn');
   await waitStatus(/yükleniyor/);
   await waitStatus(/aktarıldı/);
-  assert.equal((await pageValues(page)).values.txtAd, 'DENEME');
+  assert.equal((await pageValues(page)).values.requestAd, 'DENEME');
   assert.deepEqual(await sessionKeys(), []);
   await page.close();
 });
@@ -198,7 +198,7 @@ test('bekleyen veri: Temizle düğmesi kaydı iptal eder', async () => {
   await panel.waitForFunction(async () => Object.keys(await chrome.storage.session.get(null)).length === 0, null, { timeout: 3000 });
   await loaded;
   await page.waitForTimeout(500);
-  assert.equal((await pageValues(page)).values.txtTc, '', 'iptal edilen veri sayfaya yazılmadı');
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, '', 'iptal edilen veri sayfaya yazılmadı');
   await page.close();
 });
 
@@ -217,23 +217,34 @@ test('service worker durdurulsa bile bekleyen doldurma sekme yüklenince tamamla
   assert.equal((await cdp.send('Target.closeTarget', { targetId: target.targetId })).success, true);
   await cdp.detach();
   await waitStatus(/aktarıldı/, 20000);
-  assert.equal((await pageValues(page)).values.txtTc, DATA.tckn);
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, DATA.tckn);
   assert.deepEqual(await sessionKeys(), []);
   const marker = await sw().evaluate(() => globalThis.__testMarker);
   assert.equal(marker, undefined, 'doldurmayı yeniden başlatılmış yeni bir service worker örneği yaptı');
   await page.close();
 });
 
-test('sanal klavye açıkken readonly alanlar bildirilir, zorla doldurulmaz', async () => {
+test('sanal klavye açıkken (canlı sayfadaki gibi) alanlar doldurulur ve görevli uyarılır', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=vkeyboard');
   await openPanel(tabId);
   await typeData();
   await panel.click('#fill-btn');
-  const status = await waitStatus(/Sanal klavye/);
-  assert.doesNotMatch(status, /aktarıldı\./);
+  const status = await waitStatus(/aktarıldı/);
+  assert.match(status, /sanal klavye açık/);
+  assert.equal(await panel.locator('#field-results li[data-status="filled"]').count(), 6);
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, DATA.tckn);
+  await page.close();
+});
+
+test('salt okunur alanlar bildirilir, zorla doldurulmaz, panel verisi korunur', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=readonly');
+  await openPanel(tabId);
+  await typeData();
+  await panel.click('#fill-btn');
+  await waitStatus(/Hiçbir alan aktarılamadı/);
   assert.equal(await panel.locator('#field-results li[data-status="readonly"]').count(), 6);
   assert.equal(await panel.inputValue('#tckn'), DATA.tckn, 'başarısızlıkta panel verisi silinmez (elle giriş için)');
-  assert.equal((await pageValues(page)).values.txtTc, '');
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, '');
   await page.close();
 });
 
@@ -250,10 +261,10 @@ test('alanlar hiç gelmezse zaman aşımı mesajı', async () => {
 async function frameValues(page) {
   const out = [];
   for (const f of page.frames()) {
-    if (f === page.mainFrame() || !f.url().includes('tckimlik.nvi.gov.tr')) continue;
-    await f.waitForSelector('#txtTc');
+    if (f === page.mainFrame() || !f.url().includes('tckimlik.nvi.gov.tr') || f.url().includes('scenario=tspd')) continue; // gizli TSPD çerçeveleri alan içermez
+    await f.waitForSelector('#requestTCKimlikNo');
     out.push(await f.evaluate(() => ({
-      tc: document.getElementById('txtTc').value,
+      tc: document.getElementById('requestTCKimlikNo').value,
       robot: document.getElementById('chkRobot').checked,
       submitted: window.__submitted
     })));
@@ -299,7 +310,7 @@ test('alanları geç yüklenen sayfa yoklanır ve doldurulur', async () => {
   await typeData();
   await panel.click('#fill-btn');
   await waitStatus(/aktarıldı/);
-  assert.equal((await pageValues(page)).values.txtTc, DATA.tckn);
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, DATA.tckn);
   await page.close();
 });
 
@@ -315,10 +326,10 @@ test('yapıştırma: etiketli metin alanlara dağıtılır, ham metin silinir, a
   assert.equal(await panel.inputValue('#soyad'), DATA.soyad);
   assert.equal(await panel.inputValue('#dogumTarihi'), '05.03.1990');
   assert.equal(await panel.locator('input.guessed').count(), 0);
-  assert.equal((await pageValues(page)).values.txtTc, '', 'yapıştırma tek başına NVI formuna yazmaz');
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, '', 'yapıştırma tek başına NVI formuna yazmaz');
   await panel.click('#fill-btn');
   await waitStatus(/aktarıldı/);
-  assert.equal((await pageValues(page)).values.txtTc, DATA.tckn);
+  assert.equal((await pageValues(page)).values.requestTCKimlikNo, DATA.tckn);
   await page.close();
 });
 
@@ -376,7 +387,7 @@ test('yalnızca yıl girilirse gün/ay elle girilmek üzere boş bırakılır ve
   assert.equal(await panel.locator('#field-results li[data-status="no_value"]').count(), 2);
   assert.match(await panel.innerText('#field-results li[data-field="dogumGun"]'), /elle girin/);
   const st = await pageValues(page);
-  assert.deepEqual([st.values.txtGun, st.values.txtAy, st.values.txtYil], ['', '', '1990']);
+  assert.deepEqual([st.values.requestDogumGun, st.values.requestDogumAy, st.values.requestDogumYil], ['', '', '1990']);
   await page.close();
 });
 

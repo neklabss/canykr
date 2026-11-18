@@ -41,7 +41,7 @@ function collectInFrame() {
   const F = globalThis.NviFiller;
   const txt = (s) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 120);
   const describe = (el) => ({
-    tag: el.tagName.toLowerCase(),
+    tag: el.localName,
     type: el.getAttribute('type') || '',
     id: el.id || '',
     name: el.getAttribute('name') || '',
@@ -63,13 +63,13 @@ function collectInFrame() {
   const controls = Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea')).map(describe);
   const hidden = Array.from(document.querySelectorAll('input[type=hidden]')).map((e) => e.getAttribute('name') || e.id);
   const buttons = Array.from(document.querySelectorAll('button, input[type=submit], input[type=button], a[role=button], [role=button]'))
-    .map((e) => ({ tag: e.tagName.toLowerCase(), id: e.id || '', text: txt(e.textContent || e.value), ariaPressed: e.getAttribute('aria-pressed'), class: txt(e.className) }));
+    .map((e) => ({ tag: e.localName, id: e.id || '', text: txt(e.textContent || e.value), ariaPressed: e.getAttribute('aria-pressed'), class: txt(e.className) }));
   const vk = Array.from(document.querySelectorAll('a, button, label, span, div, input'))
     .filter((e) => /sanal\s*klavye/i.test(e.textContent || e.getAttribute('aria-label') || '') && e.children.length < 4)
     .slice(0, 5)
-    .map((e) => ({ tag: e.tagName.toLowerCase(), id: e.id || '', class: txt(e.className), text: txt(e.textContent), ariaPressed: e.getAttribute('aria-pressed'), outer: txt(e.outerHTML).slice(0, 120) }));
+    .map((e) => ({ tag: e.localName, id: e.id || '', class: txt(e.className), text: txt(e.textContent), ariaPressed: e.getAttribute('aria-pressed'), outer: txt(e.outerHTML).slice(0, 120) }));
   const keyboards = Array.from(document.querySelectorAll('[class*="keyboard" i], [id*="keyboard" i], [class*="klavye" i], [id*="klavye" i]'))
-    .filter((e) => e.getClientRects().length > 0).slice(0, 5).map((e) => ({ tag: e.tagName.toLowerCase(), id: e.id || '', class: txt(e.className) }));
+    .filter((e) => e.getClientRects().length > 0).slice(0, 5).map((e) => ({ tag: e.localName, id: e.id || '', class: txt(e.className) }));
   const iframes = Array.from(document.querySelectorAll('iframe')).map((f) => { try { const u = new URL(f.src, location.href); return u.host + u.pathname; } catch (e) { return ''; } });
   const scripts = Array.from(document.scripts).filter((s) => s.src).map((s) => { const u = new URL(s.src, location.href); return u.host + u.pathname; });
   const forms = Array.from(document.forms).map((f) => ({ id: f.id || '', name: f.getAttribute('name') || '', method: f.method, action: (() => { try { const u = new URL(f.action, location.href); return u.host + u.pathname; } catch (e) { return ''; } })() }));

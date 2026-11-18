@@ -168,7 +168,7 @@
 
   function showDone(result) {
     renderResults(result);
-    const extra = result.virtualKeyboard ? ' Sanal klavye açık görünüyor; salt okunur alanları elle girin.' : '';
+    const extra = result.virtualKeyboard ? ' Sayfada sanal klavye açık; aktarılan değerleri sayfada gözle kontrol edin.' : '';
     if (result.ok) {
       setStatus('Alanlar aktarıldı. Bu bir kimlik doğrulaması değildir: "Ben robot değilim" kutusunu işaretleyip Doğrula düğmesine siz basın.' + extra, 'ok');
       if (clearAfter.checked) clearInputs();
