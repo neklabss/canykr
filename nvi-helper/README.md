@@ -219,8 +219,19 @@ elle tekrarlanmalı. Ekran okuyucuyla gerçek kullanım testi yapılmadı.
 
 ## Canlı ortamda henüz doğrulanmayanlar
 
-Alan yapısı canlıda doğrulandı. **Doldurma işlemi ise canlı sayfada henüz denenmedi.** Açık
-kalan noktalar:
+Alan yapısı canlıda doğrulandı. **Doldurma da canlıda denendi (18.11.2026):** eklenti yan
+panelden gerçek olmayan (sentetik) bilgilerle aktarım yapıldı ve değerler NVI formundaki
+alanlara yazıldı (kullanıcı gözlemi; Doğrula'ya basılmadı, sorgu gönderilmedi). Panel sonucu:
+T.C. Kimlik No ve Doğum Gün/Ay/Yılı "Dolduruldu"; **Adı ve Soyad "Sayfa değeri kabul etmedi"**.
+Yani sayfa ad/soyad değerini yazıldıktan hemen sonra değiştirdi. En olası neden, değerlerin
+büyük harfe çevrilmesi. Buna göre eklenti artık:
+- yazdıktan sonra sayfanın tepkisi için kısa bir süre (80 ms) bekleyip karar verir,
+- değer yalnızca harf büyüklüğü (Türkçe kurallarla) değiştiyse alanı "Dolduruldu (sayfa harfleri
+  çevirdi)" sayar,
+- silindiyse ya da başka bir değere döndüyse bunu nedeniyle bildirir (`cleared` / `changed`;
+  değer gösterilmez).
+
+Bu düzeltmenin canlıda doğrulanması gerekiyor. Açık kalan noktalar:
 
 1. **Angular'ın değeri kabul etmesi.** Eklenti değeri yazıp `input` ve `change` olaylarını
    tetikliyor. Angular'ın `DefaultValueAccessor`'ı `input` olayını dinler; simülasyonda model

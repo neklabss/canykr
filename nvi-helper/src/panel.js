@@ -27,6 +27,13 @@
     error: 'Beklenmeyen hata'
   };
 
+  // Sayfanın yazılan değere ne yaptığı (değerin kendisi gösterilmez).
+  const REASON_TEXT = {
+    case_changed: 'Dolduruldu (sayfa harfleri büyük/küçük harfe çevirdi)',
+    cleared: 'Sayfa değeri sildi; NVI sayfasında elle girin',
+    changed: 'Sayfa değeri değiştirdi; NVI sayfasında elle kontrol edin'
+  };
+
   const ERROR_TEXT = {
     no_tab: 'Etkin sekme bulunamadı.',
     not_nvi_page: 'Etkin sekme NVI sayfası değil. tckimlik.nvi.gov.tr adresindeki T.C. Kimlik No Doğrulama sayfasını açın.',
@@ -110,7 +117,8 @@
       const name = document.createElement('span');
       name.textContent = FILL_LABELS[f] + ': ';
       li.appendChild(name);
-      li.appendChild(document.createTextNode(STATUS_TEXT[r.status] || r.status));
+      li.appendChild(document.createTextNode(REASON_TEXT[r.reason] || STATUS_TEXT[r.status] || r.status));
+      if (r.reason) li.dataset.reason = r.reason;
       resultsEl.appendChild(li);
     }
   }

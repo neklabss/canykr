@@ -236,6 +236,31 @@ test('sanal klavye açıkken (canlı sayfadaki gibi) alanlar doldurulur ve göre
   await page.close();
 });
 
+test('sayfa ad/soyadı büyük harfe çevirince panel "dolduruldu" der, aktarım başarılı sayılır', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=uppercase');
+  await openPanel(tabId);
+  await typeData({ ...DATA, ad: 'Deneme', soyad: 'Kullanıcı' });
+  await panel.click('#fill-btn');
+  await waitStatus(/aktarıldı/);
+  assert.equal(await panel.locator('#field-results li[data-reason="case_changed"]').count(), 2);
+  assert.match(await panel.innerText('#field-results li[data-field="ad"]'), /harfleri/);
+  const st = await pageValues(page);
+  assert.deepEqual([st.values.requestAd, st.values.requestSoyad], ['DENEME', 'KULLANICI']);
+  await page.close();
+});
+
+test('sayfa değeri değiştirirse panel nedenini (değer göstermeden) bildirir', async () => {
+  const { tabId, page } = await openTab(NVI + '?scenario=changing');
+  await openPanel(tabId);
+  await typeData();
+  await panel.click('#fill-btn');
+  await waitStatus(/Bazı alanlar aktarılamadı/);
+  const soyad = await panel.innerText('#field-results li[data-field="soyad"]');
+  assert.match(soyad, /Sayfa değeri değiştirdi/);
+  assert.doesNotMatch(soyad, /KUL/, 'değer gösterilmez');
+  await page.close();
+});
+
 test('salt okunur alanlar bildirilir, zorla doldurulmaz, panel verisi korunur', async () => {
   const { tabId, page } = await openTab(NVI + '?scenario=readonly');
   await openPanel(tabId);

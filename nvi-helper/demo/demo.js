@@ -75,7 +75,9 @@
       const li = document.createElement('li');
       li.dataset.field = f;
       li.dataset.status = result.fields[f].status;
-      li.textContent = FILL_LABELS[f] + ': ' + (STATUS[result.fields[f].status] || result.fields[f].status);
+      const r = result.fields[f];
+      const reason = { case_changed: 'Dolduruldu (sayfa harfleri çevirdi)', cleared: 'Sayfa değeri sildi', changed: 'Sayfa değeri değiştirdi' }[r.reason];
+      li.textContent = FILL_LABELS[f] + ': ' + (reason || STATUS[r.status] || r.status);
       list.appendChild(li);
     }
     $('raw').textContent = JSON.stringify(result, null, 2);

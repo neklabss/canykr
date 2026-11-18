@@ -162,9 +162,29 @@ test('disabled alan atlanır, diğerleri doldurulur', async () => {
   assert.equal(result.filledCount, 5);
 });
 
-test('sayfa değeri reddederse "rejected" bildirilir', async () => {
+test('sayfa değeri silerse "rejected/cleared" bildirilir', async () => {
   const { result } = await run('rejecting');
-  assert.equal(result.fields.dogumYili.status, 'rejected');
+  assert.deepEqual(result.fields.dogumYili, { status: 'rejected', reason: 'cleared' });
+});
+
+test('sayfa ad/soyadı büyük harfe çevirirse dolduruldu sayılır (canlıda gözlenen "kabul etmedi" düzeltmesi)', async () => {
+  const { result, state } = await run('uppercase', { data: { ...DATA, ad: 'Deneme', soyad: 'kullanıcı' } });
+  assert.deepEqual(result.fields.ad, { status: 'filled', reason: 'case_changed' });
+  assert.deepEqual(result.fields.soyad, { status: 'filled', reason: 'case_changed' });
+  assert.deepEqual([state.values.requestAd, state.values.requestSoyad], ['DENEME', 'KULLANICI']);
+  assert.equal(result.ok, true);
+  assert.equal(result.filledCount, 6);
+});
+
+test('sayfa değeri sonradan başka bir şeye çevirirse "rejected/changed" bildirilir', async () => {
+  const { result } = await run('changing');
+  assert.deepEqual(result.fields.soyad, { status: 'rejected', reason: 'changed' });
+  assert.equal(result.fields.ad.status, 'filled');
+});
+
+test('dolu alanla yalnızca harf büyüklüğü farkı varsa "unchanged" sayılır', async () => {
+  const { result } = await run('prefilled', { data: { ...DATA, ad: 'önceden' } });
+  assert.equal(result.fields.ad.status, 'unchanged');
 });
 
 test('etiketsiz, yalnızca id/name ile tanımlı alanlar eşleşir', async () => {

@@ -27,7 +27,7 @@
   <div id="host"></div>
   <script>
   (function () {
-    // ?scenario=normal|tspd|divlabels|trlower|prefilled|ambiguous|late|never|vkeyboard|readonly|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
+    // ?scenario=normal|uppercase|changing|tspd|divlabels|trlower|prefilled|ambiguous|late|never|vkeyboard|readonly|disabled|noform|rejecting|idonly|iframe|twoframes|iframe-foreign
     var scenario = new URLSearchParams(location.search).get('scenario') || 'normal';
     window.__submitted = 0;
     window.__events = [];
@@ -105,6 +105,16 @@
         this.classList.toggle('active');
         document.getElementById('keypad').classList.toggle('on', this.classList.contains('active'));
       });
+      if (scenario === 'uppercase') {
+        // Olası canlı davranış: ad/soyad yazıldıkça Türkçe büyük harfe çevrilir.
+        ['requestAd', 'requestSoyad'].forEach(function (id) {
+          document.getElementById(id).addEventListener('input', function (e) { e.target.value = e.target.value.toLocaleUpperCase('tr-TR'); });
+        });
+      }
+      if (scenario === 'changing') {
+        // Sayfa değeri başka bir şeye çevirir (ör. kırpma) — "changed" bildirilmeli.
+        document.getElementById('requestSoyad').addEventListener('input', function (e) { setTimeout(function () { e.target.value = e.target.value.slice(0, 3); }, 10); });
+      }
       if (scenario === 'rejecting') {
         // Sayfa betiği değeri kabul etmiyor (ör. maskeleme) — doldurma "rejected" dönmeli.
         document.getElementById('requestDogumYil').addEventListener('input', function (e) { e.target.value = ''; });
