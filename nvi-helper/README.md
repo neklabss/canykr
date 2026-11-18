@@ -234,6 +234,7 @@ kabul etmez.
 Windows (PowerShell):
 
 ```powershell
+cd $HOME
 Invoke-WebRequest https://github.com/neklabss/canykr/archive/refs/heads/main.zip -OutFile canykr.zip
 Expand-Archive canykr.zip -DestinationPath . -Force
 cd canykr-main\nvi-helper
@@ -252,6 +253,11 @@ npm install --no-save playwright@1.63.0
 npx playwright install chromium
 node scripts/inspect-live.cjs --sanal-klavye
 ```
+
+PowerShell yönetici olarak açılırsa `C:\WINDOWS\system32` klasöründe başlar ve oraya yazılamaz;
+bu yüzden önce `cd $HOME` çalıştırılır. Depo gizliyse ZIP'i tarayıcıdan (GitHub'da oturum açıkken,
+**Code → Download ZIP**) indirip `Expand-Archive` adımından devam edin. `npm` "running scripts is
+disabled" derse yalnızca o pencere için `Set-ExecutionPolicy -Scope Process Bypass` çalıştırın.
 
 Betik `npm run` yerine doğrudan `node` ile çalıştırılır, çünkü PowerShell 5.1 `--` ile verilen
 ek seçenekleri npm'e her zaman iletmez.
